@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Hdf", "Hdf\Hdf.vcxproj", "{C6843D3C-AE9B-4769-B4F3-820A5CD16281}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "hdfc", "hdfc\hdfc.vcxproj", "{7A405777-B737-492D-9A24-1807FFA968CE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C6843D3C-AE9B-4769-B4F3-820A5CD16281}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C6843D3C-AE9B-4769-B4F3-820A5CD16281}.Debug|Win32.Build.0 = Debug|Win32
+		{C6843D3C-AE9B-4769-B4F3-820A5CD16281}.Release|Win32.ActiveCfg = Release|Win32
+		{C6843D3C-AE9B-4769-B4F3-820A5CD16281}.Release|Win32.Build.0 = Release|Win32
+		{7A405777-B737-492D-9A24-1807FFA968CE}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7A405777-B737-492D-9A24-1807FFA968CE}.Debug|Win32.Build.0 = Debug|Win32
+		{7A405777-B737-492D-9A24-1807FFA968CE}.Release|Win32.ActiveCfg = Release|Win32
+		{7A405777-B737-492D-9A24-1807FFA968CE}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

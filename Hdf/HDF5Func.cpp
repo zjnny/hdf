@@ -1198,6 +1198,7 @@ bool HDF5Func::getAllDsNames(hid_t hF,vector<string> &vDsNs)
 	{
 		//获取各个数据集的名字
 		// H5G_obj_t type=H5Gget_objtype_by_idx(hF,i);
+	
 		ssize_t sSizet =  H5Gget_objname_by_idx(hF,i,pAttrTmp,100);
 		string strDsTmp = pAttrTmp;
 		vDsNs.push_back(strDsTmp);

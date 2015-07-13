@@ -16,6 +16,9 @@
     <Filter Include="HDFTools">
       <UniqueIdentifier>{d2e1c569-a1f9-45ac-b626-13e2ff9109a8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Project">
+      <UniqueIdentifier>{87776b3b-ee86-4aba-b97c-9d7ea7c634bf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Common.cpp">
@@ -27,9 +30,6 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="hdfreader3_bak.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="HDFTools\FuncRaw.cpp">
       <Filter>HDFTools</Filter>
     </ClCompile>
@@ -39,10 +39,31 @@
     <ClCompile Include="HDFTools\FuncObject.cpp">
       <Filter>HDFTools</Filter>
     </ClCompile>
-    <ClCompile Include="HDF5Helper.cpp">
+    <ClCompile Include="HDFTools\FuncProject.cpp">
       <Filter>HDFTools</Filter>
     </ClCompile>
-    <ClCompile Include="HDFTools\FuncProject.cpp">
+    <ClCompile Include="HDFTools\HDF5Helper.cpp">
+      <Filter>HDFTools</Filter>
+    </ClCompile>
+    <ClCompile Include="Project\Coordinate.cpp">
+      <Filter>Project</Filter>
+    </ClCompile>
+    <ClCompile Include="Project\Projector.cpp">
+      <Filter>Project</Filter>
+    </ClCompile>
+    <ClCompile Include="Project\Enhance.cpp">
+      <Filter>Project</Filter>
+    </ClCompile>
+    <ClCompile Include="Project\DataSet.cpp">
+      <Filter>Project</Filter>
+    </ClCompile>
+    <ClCompile Include="testmain2.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="HDFTools\FuncHDF.cpp">
+      <Filter>HDFTools</Filter>
+    </ClCompile>
+    <ClCompile Include="HDFTools\FuncAnalysis.cpp">
       <Filter>HDFTools</Filter>
     </ClCompile>
   </ItemGroup>
@@ -68,10 +89,28 @@
     <ClInclude Include="HDFTools\ToolFactory.h">
       <Filter>HDFTools</Filter>
     </ClInclude>
-    <ClInclude Include="HDF5Helper.h">
+    <ClInclude Include="HDFTools\FuncProject.h">
       <Filter>HDFTools</Filter>
     </ClInclude>
-    <ClInclude Include="HDFTools\FuncProject.h">
+    <ClInclude Include="HDFTools\HDF5Helper.h">
+      <Filter>HDFTools</Filter>
+    </ClInclude>
+    <ClInclude Include="Project\Coordinate.h">
+      <Filter>Project</Filter>
+    </ClInclude>
+    <ClInclude Include="Project\Projector.h">
+      <Filter>Project</Filter>
+    </ClInclude>
+    <ClInclude Include="Project\Enhance.h">
+      <Filter>Project</Filter>
+    </ClInclude>
+    <ClInclude Include="Project\DataSet.h">
+      <Filter>Project</Filter>
+    </ClInclude>
+    <ClInclude Include="HDFTools\FuncHDF.h">
+      <Filter>HDFTools</Filter>
+    </ClInclude>
+    <ClInclude Include="HDFTools\FuncAnalysis.h">
       <Filter>HDFTools</Filter>
     </ClInclude>
   </ItemGroup>

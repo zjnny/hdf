@@ -1,5 +1,8 @@
 #include "ToolFactory.h"
 #include "FuncObject.h"
+#include "FuncRaw.h"
+#include "FuncHDF.h"
+#include "FuncTif.h"
 #include <iostream>
 using namespace HDFTools;
 FuncObject* ToolFactory::Concrete(TOOL_COMMAND cmd)
@@ -7,16 +10,25 @@ FuncObject* ToolFactory::Concrete(TOOL_COMMAND cmd)
 	FuncObject *func=NULL;
 	switch (cmd)
 	{
-	case HDFTools::TOOL_NONE:
+	case TOOL_NONE:
+		func=new FuncObject();
 		break;
-	case HDFTools::TOOL_GEN_RAW:
+	case TOOL_GEN_HDF:
+		func=new FuncHDF();
 		break;
-	case HDFTools::TOOL_GEN_TIF:
+	case TOOL_GEN_RAW:
+		func=new FuncRaw();
 		break;
-	case HDFTools::TOOL_GEN_GEOTIFF:
+	case TOOL_GEN_TIF:
+		break;
+	case TOOL_GEN_GEOTIFF:
+		//func=new FuncTif();
 		break;
 	default:
+		func=new FuncObject();
 		break;
 	}
+	if(func==NULL)
+		func=new FuncObject;
 	return func;
 }

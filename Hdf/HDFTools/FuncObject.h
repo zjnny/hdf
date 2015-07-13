@@ -8,6 +8,7 @@ namespace HDFTools
 		FuncObject();
 		virtual ~FuncObject();
 		virtual int Execute();
+		virtual void SetParam(void * lparam,void *rparam){}
 	};
 }
 

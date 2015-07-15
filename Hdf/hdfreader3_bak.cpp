@@ -5,6 +5,9 @@
 #include "atlimage.h"
 #include <cassert>
 #include "HDFTools/FuncProject.h"
+#include "HDFTools/FuncAnalysis.h"
+#include "HDFTools/HDF5Helper.h"
+#include <map>
 void release();
 void * pData=NULL;
 //经度信息
@@ -12,52 +15,47 @@ void *pLonData=NULL;
 //纬度信息
 void *pLatData=NULL;
 void *pDataSet=NULL;
-int CheckGroup(int loc_id, const char *name, void *strname)
-{
-	H5G_stat_t statbuf;
-
-	H5Gget_objinfo((hid_t)loc_id, name, 0, &statbuf);
-	if(strcmp(name,(char *)strname)==0)
-	{
-		//m_hdf.ReadHdf5FileData()
-		//hid_t hDSet=H5Dread(loc_id,);
-		return 1;
-	}
-	else
-		return 0;
-}
-
-
+//FY3C_MERSI_GBAL_L1_20150526_2340_GEO1K_MS.HDF
+//FY3C_MERSI_GBAL_L1_20150526_2340_GEOQK_MS.HDF
+//-i infile -o outfile -f file1 file2 file3 -d dset1 dset2 dset3
+//暂时所有参数必须都要,而且顺序要和下面一致，否则要重写分析command的代码
+//例子：   exe -i F:\\temp\\in.hdf -o F:\\temp\\out.hdf -f  F:\\temp\\1.hdf F:\\temp\\2.hdf -d EV_1KM_RefSB  EV_1KM_RefSB2
 int _tmain(int argc, _TCHAR* argv[])
 {
+	//HDFTools::HDF5Helper::IsDataSetExist("F:\\temp\\HDF\\FY3C_MERSI_GBAL_L1_20150526_2340_GEO1K_MS.HDF","DEM");
+
+
+	HDFTools::FuncAnalysis ana;
+	ana.SetParam(argc,argv);
+	ana.Execute();
+
 	HDF5Func m_hdf;
 	DataTypeEnum datatype=UNCHARTYPE;
 	int dimensions=0,datatype2=0,bytes=0;
 	int width=0,height=0;
 	hsize_t dimValue[3]={0};
-	//m_hdf.GetHdfSdsParam("F:\\temp\\HDF\\FY3C_MERSI_GBAL_L1_20150526_2340_GEOQK_MS.HDF",
-	//	"Latitude",&dimensions,dimValue,datatype2,bytes);
-	//datatype=DataTypeEnum(datatype2);
-	//width=dimValue[1];
-	//height=dimValue[0];
-	//if(datatype==FLOATTYPE)
-	//{
-	//	assert(sizeof(float)==bytes);
-	//	pLatData=new char[width*height*sizeof(float)];
-	//	pLonData=new char[width*height*sizeof(float)];
-	//	pDataSet=new unsigned short[width*height];
-	//	memset(pLatData,0,width*height*sizeof(float));
-	//	memset(pLonData,0,width*height*sizeof(float));
-	//	memset(pDataSet,0,width*height*sizeof(unsigned short));
-	//}
-	//m_hdf.ReadHdf5FileData("F:\\temp\\HDF\\FY3C_MERSI_GBAL_L1_20150526_2340_GEOQK_MS.HDF",
-	//	"Longitude",pLonData);
-	//m_hdf.ReadHdf5FileData("F:\\temp\\HDF\\FY3C_MERSI_GBAL_L1_20150526_2340_GEOQK_MS.HDF",
-	//	"Latitude",pLatData);
+	m_hdf.GetHdfSdsParam("F:\\temp\\HDF\\FY3C_MERSI_GBAL_L1_20150526_2340_GEOQK_MS.HDF",
+		"Latitude",&dimensions,dimValue,datatype2,bytes);
+	datatype=DataTypeEnum(datatype2);
+	width=dimValue[1];
+	height=dimValue[0];
+	if(datatype==FLOATTYPE)
+	{
+		assert(sizeof(float)==bytes);
+		pLatData=new char[width*height*sizeof(float)];
+		pLonData=new char[width*height*sizeof(float)];
+		pDataSet=new unsigned short[width*height];
+		memset(pLatData,0,width*height*sizeof(float));
+		memset(pLonData,0,width*height*sizeof(float));
+		memset(pDataSet,0,width*height*sizeof(unsigned short));
+	}
+	m_hdf.ReadHdf5FileData("F:\\temp\\HDF\\FY3C_MERSI_GBAL_L1_20150526_2340_GEOQK_MS.HDF",
+		"Longitude",pLonData);
+	m_hdf.ReadHdf5FileData("F:\\temp\\HDF\\FY3C_MERSI_GBAL_L1_20150526_2340_GEOQK_MS.HDF",
+		"Latitude",pLatData);
 	
 	
 	hid_t hFile =H5Fopen("F:\\temp\\HDF\\FY3C_MERSI_GBAL_L1_20150526_2335_0250M_MS.HDF",H5F_ACC_RDONLY,H5P_DEFAULT);
-	int is=_IsObjExist(hFile,"Data/EV_250_RefSB_b1");
 	//hid_t hDSet=H5Dopen(hFile,"/Data/EV_250_RefSB_b1");
 	hid_t hgrp=H5Gopen(hFile,"Data");
 

@@ -170,7 +170,7 @@ void Projector::Output(const char* file)
 		fc=fac.Concrete(HDFTools::TOOL_GEN_RAW);
 		fc->SetParam(&m_pProjected,(void*)&outfile);
 	}
-	else if(ext=="hdf"||ext=="h5")
+	else if(ext=="hdf"||ext=="h5"||ext=="hdf5")
 	{
 		fc=fac.Concrete(HDFTools::TOOL_GEN_HDF);
 		fc->SetParam(&m_pProjected,(void*)&outfile);

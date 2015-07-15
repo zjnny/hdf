@@ -1,0 +1,23 @@
+投影程序
+//1000
+-o F:\temp\out.raw -i  F:\temp\HDF\FY3C_MERSI_GBAL_L1_20150526_2320_1000M_MS.HDF F:\temp\HDF\FY3C_MERSI_GBAL_L1_20150526_2340_GEO1K_MS.HDF -d EV_1KM_RefSB EV_250_Aggr.1KM_RefSB EV_250_Aggr.1KM_Emissive -j Longitude -w Latitude
+//250
+-o F:\temp\out.raw -i  F:\temp\HDF\FY3C_MERSI_GBAL_L1_20150526_2335_0250M_MS.HDF F:\temp\HDF\FY3C_MERSI_GBAL_L1_20150526_2340_GEOQK_MS.HDF -d EV_250_Emissive EV_250_RefSB_b1 EV_250_RefSB_b2 EV_250_RefSB_b3 EV_250_RefSB_b4 -j Longitude -w Latitude
+格式转换程序
+-o F:\temp\out.tif -i F:\temp\HDF\FY3C_MERSI_GBAL_L1_20150526_2320_1000M_MS_project.hdf -d EV_250_Aggr.1KM_RefSB
+
+
+关键字解释：
+////////////////////////////////////////////////////////////////////////////
+投影程序：
+-o 输出文件路径名；文件名后缀必须写.hdf或.h5,也可写raw用于查看数据（每个数据集会生成一个raw文件）(生成hdf文件时使用了压缩过程，有可能失败，原因未知)
+-i 输入文件路径名；可以输入多个hdf文件（2个）
+-d 数据集名称；不包含程序集的路径（程序自动查找），目前只支持16位数据集（unsigned short）
+-j 经度数据集名称；目前只支持float型数据
+-w 纬度数据集名称；目前只支持float型数据（经纬度数据集如果是Longitude/Latitude这两项也可不必写）
+/////////////////////////////////////////////////////////////////////////////
+格式转换：
+//格式转换工具不使用-j，-w
+-o 输出文件路径名，后缀必须写，根据文件名后缀判断转化格式，raw和tif(tif指的是geotif),目前支持这两种格式
+-i 输入文件路径名，可以写多个文件
+-d 数据集名称，支持16位数据集（unsigned short），不可使用float型数据

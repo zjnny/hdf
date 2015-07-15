@@ -63,8 +63,8 @@
     <ClCompile Include="HDFTools\FuncHDF.cpp">
       <Filter>HDFTools</Filter>
     </ClCompile>
-    <ClCompile Include="HDFTools\FuncAnalysis.cpp">
-      <Filter>HDFTools</Filter>
+    <ClCompile Include="Project\FuncAnalysis.cpp">
+      <Filter>Project</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -110,8 +110,8 @@
     <ClInclude Include="HDFTools\FuncHDF.h">
       <Filter>HDFTools</Filter>
     </ClInclude>
-    <ClInclude Include="HDFTools\FuncAnalysis.h">
-      <Filter>HDFTools</Filter>
+    <ClInclude Include="Project\FuncAnalysis.h">
+      <Filter>Project</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

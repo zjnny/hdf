@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{C6843D3C-AE9B-4769-B4F3-820A5CD16281}</ProjectGuid>
-    <RootNamespace>Hdf</RootNamespace>
+    <ProjectGuid>{DC03F195-1A32-4DAB-9419-D27F932B613B}</ProjectGuid>
+    <RootNamespace>HDFConvert</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -20,7 +20,6 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
-    <UseOfMfc>Dynamic</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -45,15 +44,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\inc\hdf5;F:\libsrc\Visual Leak Detector\include;..\public\geotif\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <PreprocessorDefinitions>HDF_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\lib\Debug;F:\libsrc\Visual Leak Detector\lib\Win32;..\public\geotif\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\lib\Release;F:\libsrc\Visual Leak Detector\lib\Win32;..\public\geotif\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>geotiff.lib;libtiff.lib;szlib.lib;hdf5_hl.lib;hdf5.lib;zlib.lib;vld.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>libc.lib;LIBCMTD.lib;LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -62,51 +58,36 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>..\inc\hdf5;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\inc\hdf5;..\public\geotif\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>..\lib\Release</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\lib\Release;..\public\geotif\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>geotiff.lib;libtiff.lib;szlib.lib;hdf5_hl.lib;hdf5.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>libc.lib;LIBCMTD.lib;LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <AdditionalDependencies>szlib.lib;hdf5_hl.lib;hdf5.lib;zlib.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <ImageHasSafeExceptionHandlers />
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Common.cpp" />
-    <ClCompile Include="HDF5Func.cpp" />
-    <ClCompile Include="HDFTools\FuncHDF.cpp" />
+    <ClCompile Include="DataSet.cpp" />
+    <ClCompile Include="FuncAnalysis.cpp" />
     <ClCompile Include="HDFTools\FuncObject.cpp" />
-    <ClCompile Include="HDFTools\FuncProject.cpp" />
     <ClCompile Include="HDFTools\FuncRaw.cpp" />
+    <ClCompile Include="HDFTools\FuncTif.cpp" />
     <ClCompile Include="HDFTools\HDF5Helper.cpp" />
     <ClCompile Include="HDFTools\ToolFactory.cpp" />
-    <ClCompile Include="Project\Coordinate.cpp" />
-    <ClCompile Include="Project\DataSet.cpp" />
-    <ClCompile Include="Project\Enhance.cpp" />
-    <ClCompile Include="Project\FuncAnalysis.cpp" />
-    <ClCompile Include="Project\Projector.cpp" />
-    <ClCompile Include="stdafx.cpp" />
-    <ClCompile Include="testmain2.cpp" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="common.h" />
-    <ClInclude Include="HDF5Func.h" />
-    <ClInclude Include="HDFTools\FuncHDF.h" />
+    <ClInclude Include="DataSet.h" />
+    <ClInclude Include="FuncAnalysis.h" />
     <ClInclude Include="HDFTools\FuncObject.h" />
-    <ClInclude Include="HDFTools\FuncProject.h" />
     <ClInclude Include="HDFTools\FuncRaw.h" />
+    <ClInclude Include="HDFTools\FuncTif.h" />
     <ClInclude Include="HDFTools\HDF5Helper.h" />
     <ClInclude Include="HDFTools\ToolFactory.h" />
-    <ClInclude Include="Project\Coordinate.h" />
-    <ClInclude Include="Project\DataSet.h" />
-    <ClInclude Include="Project\Enhance.h" />
-    <ClInclude Include="Project\FuncAnalysis.h" />
-    <ClInclude Include="Project\Projector.h" />
-    <ClInclude Include="SatelliteInfo.h" />
-    <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

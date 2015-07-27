@@ -30,6 +30,8 @@ void DataSet::Destroy()
 	m_DimVal[1]=1;
 	m_DimVal[2]=1;//
 	m_Bytes=2;//每单位数据占用的字节数
+	m_attr.clear();
+	m_fileattr.clear();
 }
 bool DataSet::IsPlanar()
 {
@@ -51,9 +53,28 @@ void DataSet::SetAttr(std::vector<HDFTools::AttrItem> &vc)
 {
 	m_attr=vc;
 }
+void DataSet::GetAttrItem(HDFTools::AttrItem &item)
+{
+	for(int i=0;i<m_attr.size();++i)
+	{
+		if(m_attr[i].strName==item.strName)
+		{
+			item=m_attr[i];
+			return;
+		}
+	}
+}
 std::vector<HDFTools::AttrItem>* DataSet::GetAttr()
 {
 	return &m_attr;
+}
+void DataSet::SetFileAttr(std::vector<HDFTools::AttrItem> &vc)
+{
+	m_fileattr=vc;
+}
+std::vector<HDFTools::AttrItem>* DataSet::GetFileAttr()
+{
+	return &m_fileattr;
 }
 void DataSet::InitFromFile(const char* file,std::string grouppath)
 {
@@ -69,6 +90,7 @@ void DataSet::InitFromFile(const char* file,std::string grouppath)
 		return ;
 	if(m_DimVal[2]==0)
 		m_DimVal[2]=1;
+	HDF5Helper::GetFileAttrInfo(file,m_fileattr);
 	HDF5Helper::GetDSAttrInfo(file,grouppath.c_str(),m_attr);
 	if(m_Type==UNSHORTTYPE)//m_Type  USHORT
 	{

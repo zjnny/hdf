@@ -20,7 +20,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v110</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
-    <UseOfMfc>Dynamic</UseOfMfc>
+    <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -83,6 +83,7 @@
     <ClCompile Include="HDFTools\FuncRaw.cpp" />
     <ClCompile Include="HDFTools\HDF5Helper.cpp" />
     <ClCompile Include="HDFTools\ToolFactory.cpp" />
+    <ClCompile Include="Project\CLAHE.cpp" />
     <ClCompile Include="Project\Coordinate.cpp" />
     <ClCompile Include="Project\DataSet.cpp" />
     <ClCompile Include="Project\Enhance.cpp" />
@@ -100,6 +101,7 @@
     <ClInclude Include="HDFTools\FuncRaw.h" />
     <ClInclude Include="HDFTools\HDF5Helper.h" />
     <ClInclude Include="HDFTools\ToolFactory.h" />
+    <ClInclude Include="Project\CLAHE.h" />
     <ClInclude Include="Project\Coordinate.h" />
     <ClInclude Include="Project\DataSet.h" />
     <ClInclude Include="Project\Enhance.h" />

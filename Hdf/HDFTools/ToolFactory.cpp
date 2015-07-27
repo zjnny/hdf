@@ -2,7 +2,7 @@
 #include "FuncObject.h"
 #include "FuncRaw.h"
 #include "FuncHDF.h"
-#include "FuncTif.h"
+//#include "FuncTif.h"
 #include <iostream>
 using namespace HDFTools;
 FuncObject* ToolFactory::Concrete(TOOL_COMMAND cmd)

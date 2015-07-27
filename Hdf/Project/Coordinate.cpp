@@ -38,7 +38,7 @@ void Coordinate::Init(int width,int height,void *pDada,int metre,unsigned char b
 }
 int Coordinate::GetDestLength()
 {
-	int len=int((m_max_degree-m_min_degree)/m_pixelUnit+0.5f)+1;
+	int len=int((m_max_degree-m_min_degree)/m_pixelUnit/*+0.5f*/)+1;
 	if(len<1)
 		throw exception("¼ÆËã³¤¶È´íÎó");
 	if(len>40000)

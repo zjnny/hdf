@@ -32,11 +32,13 @@ void Projector::Destroy()
 	//被投影数据集指针
 	m_pSrcData=NULL;
 	m_pProjected.Destroy();
+
 }
 void Projector::Init(DataSet* pData)
 {
 	//投影结果数据集大小
-	
+	if(m_pLatitude==NULL||m_pLongitude==NULL)
+		return;
 	m_width=m_pLongitude->GetDestLength();
 	m_height=m_pLatitude->GetDestLength();
 	int dims=pData->GetDimensions();
@@ -56,6 +58,27 @@ void Projector::Init(DataSet* pData)
 	m_pProjected.SetDataSetGroupPath(pData->GetDataSetGroupPath());
 	m_pProjected.SetDim(dims,dimval);
 	m_pProjected.SetAttr(*(pData->GetAttr()));
+	m_pProjected.SetFileAttr(*(pData->GetFileAttr()));
+	vector<AttrItem> *pAttr=m_pProjected.GetFileAttr();
+	for(int i=0;i<pAttr->size();++i)
+	{
+		if((*pAttr)[i].strName=="Orbit Point Latitude"&&(*pAttr)[i].iDataType==FLOATTYPE&&(*pAttr)[i].iByteLen==16)
+		{
+			float *dat=(float*)((*pAttr)[i].pData);
+			dat[0]=m_pLatitude->m_min_degree;
+			dat[1]=m_pLatitude->m_max_degree;
+			dat[2]=m_pLatitude->m_min_degree;
+			dat[3]=m_pLatitude->m_max_degree;
+		}
+		else if((*pAttr)[i].strName=="Orbit Point Longitude"&&(*pAttr)[i].iDataType==FLOATTYPE&&(*pAttr)[i].iByteLen==16)
+		{
+			float *dat=(float*)((*pAttr)[i].pData);
+			dat[0]=m_pLongitude->m_min_degree;
+			dat[1]=m_pLongitude->m_max_degree;
+			dat[2]=m_pLongitude->m_min_degree;
+			dat[3]=m_pLongitude->m_max_degree;
+		}
+	}
 }
 void Projector::Project(DataSet* pData)
 {
@@ -94,6 +117,8 @@ void Projector::Project(DataSet* pData)
 		//m_width m_height!=srcw srch
 		pSrc=static_cast<ushort*>(pData->GetData())+srch*srcw*z;
 		tempBuf=m_pData+z*m_width*m_height;//short +sizeof(unshort)
+		//在投影前原始图上处理//直方图均衡后会明显改变原始数据//
+		//Enhance::Histogram_Equalization(pSrc,srcw,srch);
 		for(int i=0;i<srclen;++i)
 		{
 			tempBuf[*pLon+(*pLat)*m_width]=*pSrc;
@@ -103,13 +128,10 @@ void Projector::Project(DataSet* pData)
 		}
 		//处理每一帧
 		Enhance::ImageEnhance(tempBuf,m_width,m_height);
-
 		end=clock();
 		cost=end-start;
 		cout<<"图像投影+处理耗时："<<setprecision(5)<<cost/CLOCKS_PER_SEC<<endl;
 	}
-	
-
 }
 void Projector::Project(void *pData,ushort bytes)
 {
@@ -165,26 +187,28 @@ void Projector::Output(const char* file)
 	//大小写转换
 	ToolFactory &fac=ToolFactory::GetInstance();
 	FuncObject *fc=NULL;
+	HDFTools::TOOL_COMMAND cmd=TOOL_NONE;
 	if(ext=="raw")
 	{
-		fc=fac.Concrete(HDFTools::TOOL_GEN_RAW);
-		fc->SetParam(&m_pProjected,(void*)&outfile);
+		cmd=TOOL_GEN_RAW;
 	}
 	else if(ext=="hdf"||ext=="h5"||ext=="hdf5")
 	{
-		fc=fac.Concrete(HDFTools::TOOL_GEN_HDF);
-		fc->SetParam(&m_pProjected,(void*)&outfile);
+		cmd=TOOL_GEN_HDF;
 	}
 	else if(ext=="tif")
 	{
-		fc=fac.Concrete(HDFTools::TOOL_GEN_TIF);
-		fc->SetParam(&m_pProjected,(void*)&outfile);
+		cmd=TOOL_GEN_TIF;
 	}
 	else
 	{
-		fc=fac.Concrete(HDFTools::TOOL_GEN_HDF);
-		fc->SetParam(&m_pProjected,(void*)&outfile);
+		cmd=TOOL_GEN_HDF;
 	}
+
+	fc=fac.Concrete(cmd);
+	fc->SetParam(&m_pProjected,(void*)&outfile);
+	if(cmd==TOOL_GEN_HDF)
+		fc->SetParam(this,(void*)&outfile);
 	if(fc)
 	{
 		fc->Execute();

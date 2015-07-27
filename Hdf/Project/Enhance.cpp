@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include "CLAHE.h"
 using namespace std;
 void Enhance::Nearest_interpolation(ushort *pSrc,int width,int height)
 {
@@ -18,8 +19,11 @@ void Enhance::Bilinear_interpolation(ushort *pSrc,ushort* dest,int width,int hei
 	ushort *ptempV=pSrc;
 	memcpy(dest,pSrc,width*height*sizeof(ushort));
 
+	//Horizontal_Linear_fill(dest,width,height);
+	//Vertical_Linear_fill(pSrc,width,height);
+	//下面增加了对垂直方向的补充
 	Horizontal_Linear_fill(dest,width,height);
-	Vertical_Linear_fill2(pSrc,width,height);
+	Vertical_Linear_fill(pSrc,width,height);
 	
 	ushort valH=filledVal;
 	ushort valV=filledVal;
@@ -28,9 +32,9 @@ void Enhance::Bilinear_interpolation(ushort *pSrc,ushort* dest,int width,int hei
 		{
 			valH=*ptempH;
 			valV=*ptempV;
-			if(valV==filledVal&&valH!=filledVal)
+			if(valV==filledVal&&valH!=filledVal)//是否保留，造成多出边缘？
 				*dest=valH;
-			else if(valV!=filledVal&&valH==filledVal)
+			else if(valV!=filledVal&&valH==filledVal)//是否保留，多出边缘？
 				*dest=valV;
 			else if(valV!=filledVal&&valH!=filledVal)
 				*dest=ushort((valH+valV)/2.0f+0.5f);
@@ -39,27 +43,24 @@ void Enhance::Bilinear_interpolation(ushort *pSrc,ushort* dest,int width,int hei
 			++ptempV;
 		}
 }
-
-void Enhance::Bilinear_interpolation(ushort *pSrc,int width,int height)
+void Enhance::Bilinear_interpolation2(ushort *pSrc,ushort* dest,int width,int height)
 {
+	//temp指向与pSrc相同大小内存，已经分配
+	if(pSrc==NULL||dest==NULL||width*height==0)
+		return ;
 	ushort filledVal=0;
 	//水平垂直分别进行插值处理
-	ushort *pHBuf=new ushort[width*height];
-	if(pHBuf==NULL)
-		return;
+	ushort *ptempH=dest;
+	ushort *ptempV=pSrc;
+	ushort *pDest=dest;
+	memcpy(dest,pSrc,width*height*sizeof(ushort));
 
-	ushort *pVBuf=new ushort[width*height];
-	if(pVBuf==NULL)
-	{
-		delete []pHBuf;
-		return ;
-	}
-	ushort *ptempH=pHBuf;
-	ushort *ptempV=pVBuf;
-	memcpy(pHBuf,pSrc,width*height*sizeof(ushort));
-	memcpy(pVBuf,pSrc,width*height*sizeof(ushort));
-	Horizontal_Linear_fill(pVBuf,width,height);
-	Vertical_Linear_fill(pHBuf,width,height);
+	//Horizontal_Linear_fill(dest,width,height);
+	//Vertical_Linear_fill(pSrc,width,height);
+	//下面增加了对垂直方向的补充
+	Horizontal_Linear_fill2(dest,width,height);
+	Vertical_Linear_fill2(pSrc,width,height);
+
 	ushort valH=filledVal;
 	ushort valV=filledVal;
 	for(int y=0;y<height;++y )
@@ -67,18 +68,22 @@ void Enhance::Bilinear_interpolation(ushort *pSrc,int width,int height)
 		{
 			valH=*ptempH;
 			valV=*ptempV;
-			if(valV==filledVal&&valH!=filledVal)
-				*pSrc=valH;
-			else if(valV!=filledVal&&valH==filledVal)
-				*pSrc=valV;
-			else if(valV!=filledVal&&valH!=filledVal)
-				*pSrc=ushort((valH+valV)/2.0f+0.5f);
-			++pSrc;
+		//缺少一个纬度的信息不填充，使用其他方法填充剩余的空白
+			/*	if(valV!=filledVal&&valH!=filledVal)
+			*pDest=ushort((valH+valV)/2.0f+0.5f);*/
+			if(valV!=filledVal&&valH!=filledVal)
+					*pDest=ushort((valH*(float)width/(width+height)+valV*(float)height/(width+height))+0.5f);
+			++pDest;
 			++ptempH;
 			++ptempV;
 		}
-	delete []pHBuf;
-	delete []pVBuf;
+	//临近值填充，初步
+	pDest=dest;
+	nearest_fill_unshort(pDest, width, height,0,3, 3);
+}
+void Enhance::Bicubic_Interpolation(ushort *pSrc,ushort* dest,int width,int height)
+{
+
 }
 bool Enhance::nearest_fill_unshort(unsigned short *pData, int width, int height, unsigned short fill_value, int nloop, int slide_window_width)
 {
@@ -327,6 +332,158 @@ void Enhance::Median_Filter2(unsigned short *src,int width,int height)
 	memcpy(src,temp,width*height*sizeof(ushort));
 	delete []temp;
 }
+void Enhance::Fill_HorizontalLine2(unsigned short *start,unsigned short*end,unsigned short filledVal)
+{
+		//首尾必定都有数据值
+	unsigned short *pos=start;
+	unsigned short startVal=*pos;
+	unsigned short endVal=*pos;
+	while(pos<end)
+	{
+	
+		if(*pos!=filledVal)
+		{
+			++pos;
+		}
+		else
+		{
+			unsigned short *gapStart=pos;
+			unsigned short *gapEnd=pos;
+			while(*pos==filledVal)
+				++pos;
+			gapEnd=pos;
+			startVal=*(gapStart-1);
+			endVal=*gapEnd;
+			int len=gapEnd-gapStart;
+			if(len<20)//长度过长可能失真
+			{
+				float inc=(endVal-startVal)/(float)(len+1.0f);
+				for(int i=0;i<len;++i)
+				{
+					int temp=startVal+(int)(inc*(i+1)+0.5f);
+					/*	if(inc>0)
+					temp=startVal+(int)(inc*(i+1)+0.5f);
+					else
+					temp=startVal+(int)(inc*(i+1)-0.5f);*/
+					if(temp>65535)
+						temp=65535;
+					if(temp<0)
+						temp=0;
+					*(gapStart+i)=temp;
+				}
+			}
+			
+
+		}
+	}
+}
+void Enhance::Fill_VerticalLine2(ushort *start,ushort*end,ushort width,ushort filledVal)
+{
+	//start,end是一列有值位置的其实,从s到e开始查找空白填充
+	ushort *gapStart,*gapEnd;
+	ushort startVal,endVal;
+	startVal=*start;
+	endVal=startVal;
+	ushort *pos=start;
+	while(pos<end)
+	{
+	
+		if(*pos!=filledVal)
+		{
+			pos+=width;
+		}
+		else
+		{
+			gapStart=pos;
+			gapEnd=pos;
+			while(*pos==filledVal)
+				pos+=width;
+			gapEnd=pos;
+			startVal=*(gapStart-width);
+			endVal=*gapEnd;
+			int len=(gapEnd-gapStart)/width;
+			if(len<20)
+			{
+				float inc=(endVal-startVal)/(float)(len+1.0f);
+				for(int i=0;i<len;++i)
+				{
+					int temp=startVal+(int)(inc*(i+1)+0.5f);
+					/*	if(inc>0)
+					temp=startVal+(int)(inc*(i+1)+0.5f);
+					else
+					temp=startVal+(int)(inc*(i+1)-0.5f);*/
+					if(temp>65535)
+						temp=65535;
+					if(temp<0)
+						temp=0;
+					*(gapStart+i*width)=temp;
+				}
+			}
+		
+
+		}
+	}
+}
+void Enhance::Add_VerticalHorLine2(unsigned short *src,int width,int height,unsigned short filledVal)
+{
+	int linepartition=5;
+	for(int y=0;y<height;)
+	{
+		//寻找两端起点[start,end]
+		unsigned short *pStart=src+width*y;
+		unsigned short *pEnd=pStart+width-1;
+		while(pEnd>pStart)
+		{
+			if(*pStart==filledVal)
+				++pStart;
+			if(*pEnd==filledVal)
+				--pEnd;
+			if(*pStart!=filledVal&&*pEnd!=filledVal)
+				break;
+		}
+		if(pEnd<=pStart)
+		{
+			y+=linepartition;
+			continue;
+		}
+		pEnd+=1;//线性填充一行(start,end)
+		//
+		if(pEnd-pStart<20)//50个像素的长度
+			Fill_HorizontalLine(pStart,pEnd,filledVal);
+		y+=linepartition;
+	}
+}
+void Enhance::Add_HorizontalVerLine2(ushort *src,int width,int height,unsigned short filledVal)
+{
+	int linepartition=5;
+	int step=width;
+	for(int y=0;y<width;)
+	{
+		//寻找两端起点[start,end]
+		unsigned short *pStart=src+y;
+		unsigned short *pEnd=pStart+width*(height-1);
+		while(pEnd>pStart)
+		{
+			if(*pStart==filledVal)
+				pStart+=step;
+			if(*pEnd==filledVal)
+				pEnd-=step;
+			if(*pStart!=filledVal&&*pEnd!=filledVal)
+				break;
+		}
+		if(pEnd<=pStart)
+		{
+			y+=linepartition;
+			continue;
+		}
+		//线性填充一列[start,end],
+		pEnd+=step;
+		//如果长度过长说明填充会失真放弃该行
+		if(pEnd-pStart<20*step)//50个像素的长度
+			Fill_VerticalLine(pStart,pEnd,width,filledVal);
+		y+=linepartition;
+	}
+}
 void Enhance::Fill_HorizontalLine(unsigned short *start,unsigned short*end,unsigned short filledVal)
 {
 	//首尾必定都有数据值
@@ -411,11 +568,13 @@ void Enhance::Fill_VerticalLine(ushort *start,ushort*end,ushort width,ushort fil
 		}
 	}
 }
-void Enhance::Horizontal_Linear_fill(unsigned short *src,int width,int height)
+void Enhance::Horizontal_Linear_fill2(unsigned short *src,int width,int height)
 {
+	unsigned short filledVal=0;
+	//纬度拉伸，需要依靠经度数据作为基准补充经度信息，所以纬度填充前先隔n行填充经度再填充纬度
+	Add_HorizontalVerLine2(src,width,height,filledVal);
 	//暂时在原图上填充，不使用des
 	//memcpy(des,src,width*height*sizeof(unsigned short));
-	unsigned short filledVal=0;
 	for(int y=0;y<height;++y)
 	{
 		//寻找两端起点[start,end]
@@ -433,7 +592,67 @@ void Enhance::Horizontal_Linear_fill(unsigned short *src,int width,int height)
 		if(pEnd<=pStart)
 			continue;
 		pEnd+=1;//线性填充一行[start,end),不包含end指向
+		
+		Fill_HorizontalLine2(pStart,pEnd,filledVal);
+	}
+}
+void Enhance::Horizontal_Linear_fill(unsigned short *src,int width,int height)
+{
+	unsigned short filledVal=0;
+	//纬度拉伸，需要依靠经度数据作为基准补充经度信息，所以纬度填充前先隔n行填充经度再填充纬度
+	Add_HorizontalVerLine(src,width,height,filledVal);
+	//暂时在原图上填充，不使用des
+	//memcpy(des,src,width*height*sizeof(unsigned short));
+	for(int y=0;y<height;++y)
+	{
+		//寻找两端起点[start,end]
+		unsigned short *pStart=src+width*y;
+		unsigned short *pEnd=pStart+width-1;
+		while(pEnd>pStart)
+		{
+			if(*pStart==filledVal)
+				++pStart;
+			if(*pEnd==filledVal)
+				--pEnd;
+			if(*pStart!=filledVal&&*pEnd!=filledVal)
+				break;
+		}
+		if(pEnd<=pStart)
+			continue;
+		pEnd+=1;//线性填充一行[start,end),不包含end指向
+
 		Fill_HorizontalLine(pStart,pEnd,filledVal);
+	}
+}
+void  Enhance::Add_HorizontalVerLine(ushort *src,int width,int height,unsigned short filledVal)
+{
+	int linepartition=5;
+	int step=width;
+	for(int y=0;y<width;)
+	{
+		//寻找两端起点[start,end]
+		unsigned short *pStart=src+y;
+		unsigned short *pEnd=pStart+width*(height-1);
+		while(pEnd>pStart)
+		{
+			if(*pStart==filledVal)
+				pStart+=step;
+			if(*pEnd==filledVal)
+				pEnd-=step;
+			if(*pStart!=filledVal&&*pEnd!=filledVal)
+				break;
+		}
+		if(pEnd<=pStart)
+		{
+			y+=linepartition;
+			continue;
+		}
+		//线性填充一列[start,end],
+		pEnd+=step;
+		//如果长度过长说明填充会失真放弃该行
+		if(pEnd-pStart<50*step)//50个像素的长度
+			Fill_VerticalLine(pStart,pEnd,width,filledVal);
+		y+=linepartition;
 	}
 }
 void Enhance::Add_VerticalHorLine(unsigned short *src,int width,int height,unsigned short filledVal)
@@ -459,13 +678,44 @@ void Enhance::Add_VerticalHorLine(unsigned short *src,int width,int height,unsig
 			continue;
 		}
 		pEnd+=1;//线性填充一行(start,end)
-		Fill_HorizontalLine(pStart,pEnd,filledVal);
+		//
+		//if(pEnd-pStart<400)//50个像素的长度
+			Fill_HorizontalLine(pStart,pEnd,filledVal);
 		y+=linepartition;
 	}
 }
 void Enhance::Vertical_Linear_fill2(ushort *src,int width,int height)
 {
-	//经度拉伸比纬度严重时，需要依靠纬度数据补充经度信息，所以经度填充前先隔n行填充纬度再填充经度
+	//经度拉伸，需要依靠纬度数据作为基准补充经度信息，所以经度填充前先隔n行填充纬度再填充经度
+	ushort filledVal=0;
+	Add_VerticalHorLine2(src,width,height,filledVal);
+	int step=width;
+	for(int y=0;y<width;++y)
+	{
+		//寻找两端起点[start,end]
+		unsigned short *pStart=src+y;
+		unsigned short *pEnd=pStart+width*(height-1);
+		while(pEnd>pStart)
+		{
+			if(*pStart==filledVal)
+				pStart+=step;
+			if(*pEnd==filledVal)
+				pEnd-=step;
+			if(*pStart!=filledVal&&*pEnd!=filledVal)
+				break;
+		}
+		if(pEnd<=pStart)
+			continue;
+		//线性填充一列[start,end],
+		pEnd+=step;
+		
+		Fill_VerticalLine2(pStart,pEnd,width,filledVal);
+	}
+	
+}
+void Enhance::Vertical_Linear_fill(unsigned short *src,int width,int height)
+{
+	//经度拉伸，需要依靠纬度数据作为基准补充经度信息，所以经度填充前先隔n行填充纬度再填充经度
 	ushort filledVal=0;
 	Add_VerticalHorLine(src,width,height,filledVal);
 	int step=width;
@@ -487,31 +737,10 @@ void Enhance::Vertical_Linear_fill2(ushort *src,int width,int height)
 			continue;
 		//线性填充一列[start,end],
 		pEnd+=step;
+
 		Fill_VerticalLine(pStart,pEnd,width,filledVal);
 	}
-	
-}
-void Enhance::Vertical_Linear_fill(unsigned short *src,int width,int height)
-{
-	//经度拉伸比纬度严重时，需要依靠纬度数据补充经度信息，所以经度填充前先隔n行填充纬度再填充经度
-	ushort filledVal=0;
-	Add_VerticalHorLine(src,width,height,filledVal);
-	//像素翻转成水平
-	unsigned short *back=new unsigned short[width*height];
-	memset(back,0,width*height*sizeof(unsigned short));
-	unsigned short *temp=back;
-	for(int x=0;x<width;++x)
-		for(int y=0;y<height;++y)
-			*(temp++)=*(src+x+y*width);
-	
-	//按照水平方法处理
-	Horizontal_Linear_fill(back,height,width);
-	//像素还原垂直
-	temp=back;
-	for(int y=0;y<height;++y)//宽度
-		for(int x=0;x<width;++x)//高度
-			*(src++)=*(temp+y+x*height);
-	delete[] back;
+
 }
 void Enhance::Convolution(ushort *src,ushort *des,int width,int height,ushort tplW,ushort tplH,ushort tplMX,ushort tplMY,int *tplArr,float fac)
 {
@@ -533,6 +762,10 @@ void Enhance::Convolution(ushort *src,ushort *des,int width,int height,ushort tp
 				}
 			}
 			fResult *= fac;
+			if(fResult<0.0f)
+				fResult=0.00001f;
+			if(fResult>4094.99f)
+				fResult=4094.99f;
 			ndata[a*width+b]=ushort(fResult+0.5f);
 		}
 	}
@@ -564,21 +797,40 @@ void Enhance::Convolution(ushort *src,ushort *des,int width,int height,ushort tp
 	 delete []ndata;
 
  }
- void Enhance::Average_Smooth(ushort *src,ushort* dest,int width,int height)
+ void Enhance::Laplace_Sharp(ushort *src,ushort* dest,int width,int height)
  {
 	 memcpy(dest,src,sizeof(ushort)*width*height);
-	 int arr[25]=  {
-		 0,1,2,1,0,
-		 1,2,4,2,1,
-		 2,4,8,4,2,
-		 1,2,4,2,1,
-		 0,1,2,1,0
+	 int arr[9]=  {
+		-1,-1,-1,
+		 -1,9,-1,
+		 -1,-1,-1
 	 };
-	 ushort templateMidX=1,templateMidY=1;
-	 float factor=0.02083f;
-	 Convolution(src,dest,width,height,5,5,2,2,arr,factor);
+	 float factor=1.0f;
+	 Convolution(src,dest,width,height,3,3,1,1,arr,factor);
  }
-  void Enhance::Average_Smooth(ushort *src,int width,int height)
+ void Enhance::Gauss_Smooth(ushort *src,ushort* dest,int width,int height)
+ {
+	 //memcpy(dest,src,sizeof(ushort)*width*height);
+	 //int arr[25]=  {
+		// 0,1,2,1,0,
+		// 1,2,4,2,1,
+		// 2,4,8,4,2,
+		// 1,2,4,2,1,
+		// 0,1,2,1,0
+	 //};
+	 //float factor=0.02083f;
+	 //Convolution(src,dest,width,height,5,5,2,2,arr,factor);
+	 ///Gaussian Blur///////////////////////////////////////////////////////////////////////
+	 memcpy(dest,src,sizeof(ushort)*width*height);
+	 int arr[9]=  {
+		 1,2,1,
+		 2,4,2,
+		 1,2,1
+	 };
+	 float factor=0.0625f;
+	 Convolution(src,dest,width,height,3,3,1,1,arr,factor);
+ }
+  void Enhance::Gauss_Smooth(ushort *src,int width,int height)
   {
 	  /* int arr[9]=  {
 	  1,2,1,
@@ -600,13 +852,98 @@ void Enhance::Convolution(ushort *src,ushort *des,int width,int height,ushort tp
   {
 	  ///插值
 	  ushort *dest=new ushort[width*height];
-	  Enhance::Bilinear_interpolation(pSrc,dest,width,height);//生成结果保存到dest中，但是pSrc已经被修改过了
-	  //Enhance::Horizontal_Linear_fill(tempBuf,m_width,m_height);
-	  //Enhance::Vertical_Linear_fill(tempBuf,m_width,m_height);
-	  //Enhance::nearest_fill_unshort(tempBuf,m_width,m_height,0,4,3);
+	  //生成结果保存到dest中，但是pSrc已经被修改过了(为了利用空间，避免图像过大内存不足)
+	 // Enhance::Bilinear_interpolation2(pSrc,dest,width,height);
+	 // memcpy(pSrc,dest,width*height*sizeof(ushort));
+	  Enhance::nearest_fill_unshort(pSrc,width,height,0,4,3);
 	  ///平滑去噪
-	  //Enhance::Median_Filter2(tempBuf,m_width,m_height);//太耗时
-	  Enhance::Average_Smooth(dest,pSrc,width,height);
+	 // Enhance::Median_Filter2(dest,width,height);//太耗时
+	 //  memcpy(dest,pSrc,sizeof(ushort)*width*height);
+	 // Enhance::Gauss_Smooth(pSrc,dest,width,height);
+	 //  Enhance::Laplace_Sharp(dest,pSrc,width,height);
 	  //memcpy(pSrc,dest,sizeof(ushort)*width*height);
 	  delete []dest;
   }
+  void  Enhance::Histogram_Equalization(ushort *src,int width,int height)
+  {
+	  // 指向源图像的指针
+	  //const int max_val=16383;//14位
+	  const int max_val=4095;//12位
+	   //const int max_val=65535;//16位
+	  ushort*	lpSrc;
+		 // // 临时变量
+		int	lTemp;
+		 // // 循环变量
+		int	i;
+		int	j;
+		// 灰度映射表
+		ushort	*bMap=new ushort[max_val+1];
+		 memset(bMap,0, (max_val+1)*sizeof(ushort));
+		 // // 灰度映射表
+		 int	*lCount=new int[max_val+1];
+		 memset(lCount,0,(max_val+1)*sizeof(int));
+
+		  // 计算各个灰度值的计数
+		  for (i = 0; i < height; i ++)
+		  {
+			  for (j = 0; j < width; j ++)
+			  {
+				  lpSrc = src + width * i + j;
+
+				  // 计数加1
+#ifdef _DEBUG
+				  if(*(lpSrc)>max_val)
+					  cout<<"像素值超出范围"<<endl;
+#endif
+				  lCount[*(lpSrc)]++;
+			  }
+		  }
+		  int sum=0;
+		  for(int i=0;i<max_val+1;++i)
+		  {
+			  sum+=lCount[i];
+
+		  }
+		  // 计算灰度映射表
+		  for (i = 0; i <max_val+1; i++)
+		  {
+			  // 初始为0
+			  lTemp = 0;
+
+			  for (j = 0; j <= i ; j++)
+			  {
+				  lTemp += lCount[j];
+			  }
+
+			  // 计算对应的新灰度值
+			  int tp=lTemp * (float)max_val / (height *width)+0.5f;
+			 
+			  if(tp>max_val)
+				  tp=max_val;
+
+			  bMap[i] = (ushort) tp;
+		  }
+
+		  // 每行
+		  for(i = 0; i <height; i++)
+		  {
+			  // 每列
+			  for(j = 0; j <width; j++)
+			  {
+				  // 指向DIB第i行，第j个象素的指针
+				  lpSrc = src +width * (height - 1 - i) + j;
+
+				  // 计算新的灰度值
+				  *lpSrc = bMap[*lpSrc];
+			  }
+		  }
+
+		  delete [] lCount;
+		  delete [] bMap;
+  };
+void Enhance::CLAHE(ushort *pSrc,int width,int height)
+{
+	::CLAHE(pSrc,width,height, 
+		0,4095, 8, 8,
+		0,0.1);
+}

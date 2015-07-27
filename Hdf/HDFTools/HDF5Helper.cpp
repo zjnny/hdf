@@ -1,6 +1,6 @@
 #include "HDF5Helper.h"
 #include "string.h"
-//#include "stdio.h"
+#include "stdio.h"
 #include "hdf5.h"
 #ifdef WIN32
 #include "h5lt.h"
@@ -342,6 +342,15 @@ bool HDF5Helper::GetAttrItem(hid_t fd,const char* dsname,AttrItem &aG)
 
 	return true;
 }
+int  HDF5Helper::GetFileAttrInfo(const char* file,std::vector<AttrItem> &vc)
+{
+	hid_t hFile =H5Fopen(file,H5F_ACC_RDONLY,H5P_DEFAULT);
+	if(hFile<0)
+		return -1;
+	GetFileAttrInfo(hFile,vc);
+	H5Fclose(hFile);
+	return 0;
+}
 int HDF5Helper::GetDSAttrInfo( const char* file,const char* dsname,std::vector<AttrItem> &vc)
 {
 	 hid_t hFile =H5Fopen(file,H5F_ACC_RDONLY,H5P_DEFAULT);
@@ -494,6 +503,8 @@ int HDF5Helper::SaveDataSet(const char *file,std::string &dset,void *pData,int d
 		hFile=H5Fcreate(file,H5F_ACC_TRUNC,H5P_DEFAULT,H5P_DEFAULT);
 		if(hFile<0)
 			return -1;
+
+		
 	}
 	hid_t hDataspace=H5Screate_simple(dimens,hDimValue,NULL);
 	hsize_t OutDataBegin[2]		= { 0, 0 };				// 输出数据空间的起始(Offset of start )
@@ -525,6 +536,13 @@ int HDF5Helper::SaveDataSet(const char *file,std::string &dset,void *pData,int d
 		hDataset = H5Dopen(hFile,dset.c_str()); 
 		if(hDataset<0)
 			hDataset=H5Dcreate(hFile,dset.c_str(),H5T_NATIVE_USHORT,hDataspace,hProperties);
+		if(hDataset<0)
+		{
+			printf("压缩失败，非压缩存储");
+			hDataset = H5Dopen(hFile,dset.c_str()); 
+			if(hDataset<0)
+				hDataset=H5Dcreate(hFile,dset.c_str(),H5T_NATIVE_USHORT,hDataspace,H5P_DEFAULT);
+		}
 	}
 	else
 	{
@@ -534,6 +552,7 @@ int HDF5Helper::SaveDataSet(const char *file,std::string &dset,void *pData,int d
 	}
 	if(hDataset<0)
 	{
+		printf("文件无法打开，无法存储数据");
 		H5Sclose(hDataspace);
 		H5Fclose(hFile);
 		return -1;
@@ -542,6 +561,20 @@ int HDF5Helper::SaveDataSet(const char *file,std::string &dset,void *pData,int d
 	res=H5Dclose(hDataset);
 	res=H5Sclose(hDataspace);
 	res=H5Fclose(hFile);
+	return 0;
+}
+int HDF5Helper::SetFileAttrInfo(const char* file,std::vector<AttrItem> &vc)
+{
+	hid_t hFile =H5Fopen(file,H5F_ACC_RDWR,H5P_DEFAULT);
+	if(hFile<0)
+		return false;
+	SetFileAttrInfo(hFile,vc);
+	H5Fclose(hFile);
+	return true;
+}
+int HDF5Helper::SetFileAttrInfo(hid_t fd,std::vector<AttrItem> &vc)
+{
+	SetAttrInfo(fd,"/",vc);
 	return 0;
 }
 bool HDF5Helper::SetAttrInfo(const char* file,const char* strDsName,const std::vector<AttrItem> &vAttrD)

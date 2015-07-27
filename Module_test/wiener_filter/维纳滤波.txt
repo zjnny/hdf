@@ -1,0 +1,1903 @@
+http://bbs.csdn.net/topics/390338193
+
+登录 | 注册
+首页 精选版块  论坛帮助 论坛牛人 论坛地图 专家问答
+
+ 
+
+  
+CSDN > CSDN论坛 > VC/MFC > 图形处理/算法
+返回列表
+管理菜单 结帖 发帖 回复 关注关注
+用opencv实现逆滤波，维纳滤波图像复原（维纳滤波有个问题请高人指点） [问题点数：100分，结帖人suseyaoyao] 快速回复只显示楼主关注帖子
+用opencv实现逆滤波，维纳滤波图像复原（维纳滤波有个问题请高人指点） [问题点数：100分，结帖人suseyaoyao]   收藏
+suseyaoyao
+
+suseyaoyao
+suseyaoyao
+本版等级：T3
+结帖率：78.57%
+楼主 发表于： 2013-01-06 10:34:33
+本帖最后由 VisualEleven 于 2013-01-06 12:01:58 编辑
+图像处理维纳滤波，逆滤波，opencv 声明：1、帮顶贴也有分，第一次发帖最多只能给100分，全部奉送；
+      2、用opencv逆滤波我已经实现
+      3、我的逆滤波和维纳滤波都是参考这个帖子，逆滤波可以对图像进行复原，维纳滤波得到的是一条条白线，不知道为什么呢？http://blog.csdn.net/freeboy1015/article/details/7734230
+    4、逆滤波的完整代码将在2楼贴出，因为是可以运行的，只需要配置你的opencv即可，
+     5、其实我只是在3的帖子基础上用opencv进行转化的，还请大神可以去看看3的那个帖子，其实那个帖子的代码是出自Visual C++数字图像处理技术详解（作者刘海波）那本书，他只是把书上的function敲上去了，不过那个fourn函数书上没有，也算他原创吧……
+C/C++ code
+
+?
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+#include<cv.h>
+#include<highgui.h>
+#include<math.h>
+#include<time.h>
+#include<iostream>       //存储int型变量用32位
+//#include<vector>
+#include <stdlib.h>
+ 
+#define SWAP(a,b) tempr=(a);(a)=(b);(b)=tempr
+ 
+# pragma comment(linker, "/NODEFAULTLIB:atlthunk.lib")
+# pragma comment(linker, "/NODEFAULTLIB:LIBCMT")
+# pragma comment(linker, "/NODEFAULTLIB:MSVCRTD")
+BOOL fourn(double * data/*psrc*/, unsigned long nn[]/*w*/, int ndim/*2*/, int isign);
+void main(int argc, char argv[])
+{
+    IplImage *Gray = cvLoadImage("ceshi1.jpg",-1);
+    cvNamedWindow("src");
+    cvShowImage("src",Gray);
+    int lHeight = Gray->height;
+    int lWidth = Gray->width;
+    int lLineBytes = Gray->widthStep;
+    int lw = 1;
+    int lh = 1;
+    int wp = 0;
+    int hp = 0;
+    //保证离散傅里叶变换的宽度和高度为2的整数幂
+    while(lw*2 <= lLineBytes)
+    {
+        lw = lw*2;0;  
+        wp++;
+    }
+    while(lh*2 <= lHeight)
+    {
+        lh = lh*2;
+        hp++;
+    }
+    //输入退化图像的长和宽必须为2的整数倍；
+    if(lw != (int)lLineBytes)
+    {
+        return;
+    }
+    if(lh != (int)lHeight)
+    {
+        return;
+    }
+    double *fftSrc, *fftKernel,*fftNoise;
+    fftSrc = new double [lHeight*lLineBytes*2+1];
+    fftKernel = new double [lHeight*lLineBytes*2+1];
+        fftNoise = new double [lHeight*lLineBytes*2+1];
+    unsigned long nn[3] = {0};
+    nn[1] = lHeight;
+    nn[2] = lLineBytes;
+    LPSTR lpSrc;
+    unsigned char pixel;
+    for (int j = 0;j < lHeight ;j++)
+    {
+        for(int i = 0;i < lLineBytes ;i++)
+        {
+            // 指向源图像倒数第j行，第i个象素的指针   
+            lpSrc = (char *)Gray->imageData + lLineBytes * j + i;
+ 
+            pixel = (unsigned char)*lpSrc;
+ 
+            fftSrc[(2*lLineBytes)*j + 2*i + 1] = (double)pixel;
+            fftSrc[(2*lLineBytes)*j + 2*i + 2] = 0.0;
+ 
+            if(i < 15 && j == 0)
+            {
+                fftKernel[(2*lLineBytes)*j + 2*i + 1] = 0.0667;
+            }
+            else
+            {
+                fftKernel[(2*lLineBytes)*j + 2*i + 1] = 0.0;
+            }
+            fftKernel[(2*lLineBytes)*j + 2*i + 2] = 0.0;
+            if( i + j == ((int)((i+j)/8))*8)
+            {
+                fftNoise[(2*lLineBytes)*j + 2*i +1] = -16.0;
+            }
+            else
+            {
+                fftNoise[(2*lLineBytes)*j + 2*i +1] = 0.0;
+            }
+            fftNoise[(2*lLineBytes)*j + 2*i +2] = 0.0;
+        }
+    }
+    //srand((unsigned)time(NULL));
+    //对源图像进行FFT
+    fourn(fftSrc,nn,2,1);
+    //对卷积核图像进行FFT
+    fourn(fftKernel,nn,2,1);
+    //对噪声图像进行FFT
+    fourn(fftNoise,nn,2,1);
+    double a,b,c,d,e,f,multi;
+    for (int i = 1;i <lHeight*lLineBytes*2;i+=2)
+    {
+        a = fftSrc[i];
+        b = fftSrc[i+1];
+        c = fftKernel[i];
+        d = fftKernel[i+1];
+        e = fftNoise[i];
+        f = fftNoise[i+1];
+        multi = (a*a + b*b)/(a*a + b*b + e*e + f*f);
+        if (c*c + d*d > 1e-3)
+        {
+            fftSrc[i] = ( a*c + b*d ) / ( c*c + d*d )/multi;
+            fftSrc[i+1] = ( b*c - a*d ) / ( c*c + d*d )/multi;
+        }
+    }
+ 
+    //对结果图像进行反FFT
+    fourn(fftSrc,nn,2,-1);
+    //确定归一化因子
+    //图像归一化因子
+    double MaxNum;
+    MaxNum = 0.0;
+    for (int j = 0;j < lHeight ;j++)
+    {
+        for(int i = 0;i < lLineBytes ;i++)
+        {
+            fftSrc[(2*lLineBytes)*j + 2*i + 1] = 
+                sqrt(fftSrc[(2*lLineBytes)*j + 2*i + 1] * fftSrc[(2*lLineBytes)*j + 2*i + 1]\
+                +fftSrc[(2*lLineBytes)*j + 2*i + 2] * fftSrc[(2*lLineBytes)*j + 2*i + 2]);
+            if( MaxNum < fftSrc[(2*lLineBytes)*j + 2*i + 1])
+                MaxNum = fftSrc[(2*lLineBytes)*j + 2*i + 1];
+        }
+    }
+    //转换为图像
+    for (int j = 0;j < lHeight ;j++)
+    {
+        for(int i = 0;i < lLineBytes ;i++)
+        {
+            // 指向源图像倒数第j行，第i个象素的指针   
+            lpSrc = (char *)Gray->imageData + lLineBytes * j + i;
+ 
+            *lpSrc = (unsigned char) (fftSrc[(2*lLineBytes)*j + 2*i + 1]*255.0/MaxNum/2);
+        }
+    }
+    cvNamedWindow("dst");
+    cvShowImage("dst",Gray);
+    cvWaitKey(0);
+ 
+     
+}
+ 
+ 
+ 
+BOOL fourn(double * data/*psrc*/, unsigned long nn[]/*w*/, int ndim/*2*/, int isign)
+{
+    int idim;
+    unsigned long i1,i2,i3,i2rev,i3rev,ip1,ip2,ip3,ifp1,ifp2;
+    unsigned long ibit,k1,k2,n,nprev,nrem,ntot;
+    double tempi,tempr;
+    double theta,wi,wpi,wpr,wr,wtemp;
+ 
+    for (ntot=1,idim=1;idim<=ndim;idim++)
+        ntot *= nn[idim];
+    nprev=1;
+    for (idim=ndim;idim>=1;idim--) {
+        n=nn[idim];
+        nrem=ntot/(n*nprev);
+        ip1=nprev << 1;
+        ip2=ip1*n;
+        ip3=ip2*nrem;
+        i2rev=1;
+        for (i2=1;i2<=ip2;i2+=ip1) {
+            if (i2  < i2rev) {
+                for (i1=i2;i1<=i2+ip1-2;i1+=2) {
+                    for (i3=i1;i3<=ip3;i3+=ip2) {
+                        i3rev=i2rev+i3-i2;
+                        SWAP(data[i3],data[i3rev]);
+                        SWAP(data[i3+1],data[i3rev+1]);
+                    }
+                }
+            }
+            ibit=ip2 >> 1;
+            while (ibit >= ip1 && i2rev > ibit) {
+                i2rev -= ibit;
+                ibit >>= 1;
+            }
+            i2rev += ibit;
+        }
+        ifp1=ip1;
+        while (ifp1 < ip2) {
+            ifp2=ifp1 << 1;
+            theta=isign*6.28318530717959/(ifp2/ip1);
+            wtemp=sin(0.5*theta);
+            wpr = -2.0*wtemp*wtemp;
+            wpi=sin(theta);
+            wr=1.0;
+            wi=0.0;
+            for (i3=1;i3<=ifp1;i3+=ip1) {
+                for (i1=i3;i1<=i3+ip1-2;i1+=2) {
+                    for (i2=i1;i2<=ip3;i2+=ifp2) {
+                        k1=i2;
+                        k2=k1+ifp1;
+                        tempr=wr*data[k2]-wi*data[k2+1];
+                        tempi=wr*data[k2+1]+wi*data[k2];
+                        data[k2]=data[k1]-tempr;
+                        data[k2+1]=data[k1+1]-tempi;
+                        data[k1] += tempr;
+                        data[k1+1] += tempi;
+                    }
+                }
+                wr=(wtemp=wr)*wpr-wi*wpi+wr;
+                wi=wi*wpr+wtemp*wpi+wi;
+            }
+            ifp1=ifp2;
+        }
+        nprev *= n;
+    }
+    return true;
+}
+更多 0 分享到：
+
+对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理 回复次数：23
+suseyaoyao
+
+suseyaoyao
+suseyaoyao
+本版等级：T3
+#1 得分：0 回复于： 2013-01-06 10:35:58
+本帖最后由 VisualEleven 于 2013-01-06 12:02:38 编辑
+下面是直接逆滤波的代码，测试没有问题
+C/C++ code
+?
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+288
+289
+290
+291
+292
+293
+294
+295
+296
+297
+298
+299
+300
+301
+302
+303
+304
+305
+306
+307
+308
+309
+310
+311
+312
+313
+314
+315
+316
+317
+318
+319
+320
+321
+322
+323
+324
+325
+326
+327
+328
+329
+330
+331
+332
+333
+334
+335
+336
+337
+338
+339
+340
+341
+342
+343
+344
+345
+346
+347
+348
+349
+350
+351
+352
+353
+354
+355
+356
+357
+358
+359
+360
+361
+362
+363
+364
+365
+366
+367
+368
+369
+370
+371
+372
+373
+374
+375
+376
+377
+378
+379
+380
+381
+382
+383
+384
+385
+386
+387
+388
+389
+390
+391
+392
+393
+394
+395
+396
+397
+398
+399
+400
+401
+402
+403
+404
+405
+406
+407
+408
+409
+#include<cv.h>
+#include<highgui.h>
+#include<math.h>
+#include<time.h>
+#include<iostream>       //存储int型变量用32位
+//#include<vector>
+#include <stdlib.h>
+ 
+#define SWAP(a,b) tempr=(a);(a)=(b);(b)=tempr
+ 
+# pragma comment(linker, "/NODEFAULTLIB:atlthunk.lib")
+# pragma comment(linker, "/NODEFAULTLIB:LIBCMT")
+# pragma comment(linker, "/NODEFAULTLIB:MSVCRTD")
+BOOL fourn(double * data/*psrc*/, unsigned long nn[]/*w*/, int ndim/*2*/, int isign);
+void main(int argc, char argv[])
+{
+    IplImage *Gray = cvLoadImage("ceshi1.jpg",-1);
+    cvNamedWindow("src");
+    cvShowImage("src",Gray);
+    BYTE data1;
+    for(int i=0;i<Gray->height;i++)
+    {
+        for(int j=0;j<Gray->width;j++)
+        {
+            data1=(BYTE)Gray->imageData[i*Gray->widthStep+j];
+        }
+    }
+//    IplImage *Gray = cvCreateImage(cvGetSize(RGB),RGB->depth,1);
+    //cvCvtColor(RGB,Gray,CV_BGR2GRAY);
+    //cvCopyImage(RGB,Gray);
+    int lHeight = Gray->height;
+    int lWidth = Gray->width;
+    int lLineBytes = Gray->widthStep;
+    int lw = 1;
+    int lh = 1;
+    int wp = 0;
+    int hp = 0;
+    //保证离散傅里叶变换的宽度和高度为2的整数幂
+    while(lw*2 <= lLineBytes)
+    {
+        lw = lw*2;
+        wp++;
+    }
+    while(lh*2 <= lHeight)
+    {
+        lh = lh*2;
+        hp++;
+    }
+    //输入退化图像的长和宽必须为2的整数倍；
+    if(lw != (int)lLineBytes)
+    {
+        return;
+    }
+    if(lh != (int)lHeight)
+    {
+        return;
+    }
+    //用于做FFT的数组
+ 
+            // 指向源图像倒数第j行，第i个象素的指针   
+             
+    double *fftSrc, *fftKernel;
+    fftSrc = new double [lHeight*lLineBytes*2+1];
+    fftKernel = new double [lHeight*lLineBytes*2+1];
+    unsigned long nn[3] = {0};
+    nn[1] = lHeight;
+    nn[2] = lLineBytes;
+    LPSTR lpSrc;
+    unsigned char pixel;
+    for (int j = 0;j < lHeight ;j++)
+    {
+        for(int i = 0;i < lLineBytes ;i++)
+        {
+            // 指向源图像倒数第j行，第i个象素的指针   
+            lpSrc = (char *)Gray->imageData + lLineBytes * j + i;
+ 
+            pixel = (unsigned char)*lpSrc;
+ 
+            fftSrc[(2*lLineBytes)*j + 2*i + 1] = (double)pixel;
+            fftSrc[(2*lLineBytes)*j + 2*i + 2] = 0.0;
+ 
+            if(i < 15 && j == 0)
+            {
+                fftKernel[(2*lLineBytes)*j + 2*i + 1] = 0.0667;
+            }
+            else
+            {
+                fftKernel[(2*lLineBytes)*j + 2*i + 1] = 0.0;
+            }
+            fftKernel[(2*lLineBytes)*j + 2*i + 2] = 0.0;
+        }
+    }
+ 
+    //对源图像进行FFT
+    fourn(fftSrc,nn,2,1);
+    //对卷积核图像进行FFT
+    fourn(fftKernel,nn,2,1);
+    double a,b,c,d;
+    for (int j = 0;j < lHeight ;j++)
+    {
+        for(int i = 0;i < lLineBytes ;i++)
+        {
+            a = fftSrc[(2*lLineBytes)*j + 2*i + 1];
+            b = fftSrc[(2*lLineBytes)*j + 2*i + 2];
+            c = fftKernel[(2*lLineBytes)*j + 2*i + 1];
+            d = fftKernel[(2*lLineBytes)*j + 2*i + 2];
+            if (c*c + d*d > 1e-3)
+            {
+                fftSrc[(2*lLineBytes)*j + 2*i + 1] = ( a*c + b*d ) / ( c*c + d*d );
+                fftSrc[(2*lLineBytes)*j + 2*i + 2] = ( b*c - a*d ) / ( c*c + d*d );
+            }
+        }
+    }
+ 
+    //对结果图像进行反FFT
+    fourn(fftSrc,nn,2,-1);
+ 
+    //确定归一化因子
+    //图像归一化因子
+    double MaxNum;
+    MaxNum = 0.0;
+    for (int j = 0;j < lHeight ;j++)
+    {
+        for(int i = 0;i < lLineBytes ;i++)
+        {
+            fftSrc[(2*lLineBytes)*j + 2*i + 1] = 
+                sqrt(fftSrc[(2*lLineBytes)*j + 2*i + 1] * fftSrc[(2*lLineBytes)*j + 2*i + 1]/
+                +fftSrc[(2*lLineBytes)*j + 2*i + 2] * fftSrc[(2*lLineBytes)*j + 2*i + 2]);
+            if( MaxNum < fftSrc[(2*lLineBytes)*j + 2*i + 1])
+                MaxNum = fftSrc[(2*lLineBytes)*j + 2*i + 1];
+        }
+    }
+    //转换为图像
+    for (int j = 0;j < lHeight ;j++)
+    {
+        for(int i = 0;i < lLineBytes ;i++)
+        {
+            // 指向源图像倒数第j行，第i个象素的指针   
+            lpSrc = (char *)Gray->imageData + lLineBytes * j + i;
+ 
+            *lpSrc = (unsigned char) (fftSrc[(2*lLineBytes)*j + 2*i + 1]*255.0/MaxNum);
+        }
+    }
+    cvNamedWindow("dst");
+    cvShowImage("dst",Gray);
+    cvWaitKey(0);
+}
+ 
+ 
+BOOL fourn(double * data/*psrc*/, unsigned long nn[]/*w*/, int ndim/*2*/, int isign)
+{
+    int idim;
+    unsigned long i1,i2,i3,i2rev,i3rev,ip1,ip2,ip3,ifp1,ifp2;
+    unsigned long ibit,k1,k2,n,nprev,nrem,ntot;
+    double tempi,tempr;
+    double theta,wi,wpi,wpr,wr,wtemp;
+ 
+    for (ntot=1,idim=1;idim<=ndim;idim++)
+        ntot *= nn[idim];
+    nprev=1;
+    for (idim=ndim;idim>=1;idim--) {
+        n=nn[idim];
+        nrem=ntot/(n*nprev);
+        ip1=nprev << 1;
+        ip2=ip1*n;
+        ip3=ip2*nrem;
+        i2rev=1;
+        for (i2=1;i2<=ip2;i2+=ip1) {
+            if (i2  < i2rev) {
+                for (i1=i2;i1<=i2+ip1-2;i1+=2) {
+                    for (i3=i1;i3<=ip3;i3+=ip2) {
+                        i3rev=i2rev+i3-i2;
+                        SWAP(data[i3],data[i3rev]);
+                        SWAP(data[i3+1],data[i3rev+1]);
+                    }
+                }
+            }
+            ibit=ip2 >> 1;
+            while (ibit >= ip1 && i2rev > ibit) {
+                i2rev -= ibit;
+                ibit >>= 1;
+            }
+            i2rev += ibit;
+        }
+        ifp1=ip1;
+        while (ifp1 < ip2) {
+            ifp2=ifp1 << 1;
+            theta=isign*6.28318530717959/(ifp2/ip1);
+            wtemp=sin(0.5*theta);
+            wpr = -2.0*wtemp*wtemp;
+            wpi=sin(theta);
+            wr=1.0;
+            wi=0.0;
+            for (i3=1;i3<=ifp1;i3+=ip1) {
+                for (i1=i3;i1<=i3+ip1-2;i1+=2) {
+                    for (i2=i1;i2<=ip3;i2+=ifp2) {
+                        k1=i2;
+                        k2=k1+ifp1;
+                        tempr=wr*data[k2]-wi*data[k2+1];
+                        tempi=wr*data[k2+1]+wi*data[k2];
+                        data[k2]=data[k1]-tempr;
+                        data[k2+1]=data[k1+1]-tempi;
+                        data[k1] += tempr;
+                        data[k1+1] += tempi;
+                    }
+                }
+                wr=(wtemp=wr)*wpr-wi*wpi+wr;
+                wi=wi*wpr+wtemp*wpi+wi;
+            }
+            ifp1=ifp2;
+        }
+        nprev *= n;
+    }
+    return true;
+}
+ 
+ 
+ 
+ 
+/*
+ 
+//参数说明:
+//LPSTR lpDIBBits    - 指向源DIB图像指针
+//LONG  lWidth       - 源图像宽度（象素数，必须是4的倍数）
+//LONG  lHeight      - 源图像高度（象素数）
+/
+//函数说明:
+//该函数用来对BlurDIB()生成的DIB图像进行复原操作。
+BOOL WINAPI RestoreDIB (LPSTR lpDIBBits, LONG lWidth, LONG lHeight)
+{
+    // 指向源图像的指针
+    LPSTR lpSrc;
+    //循环变量
+    long i;
+    long j;
+    //像素值
+    unsigned char pixel;
+    // 图像每行的字节数
+    LONG lLineBytes;
+    //用于做FFT的数组
+    double *fftSrc,*fftKernel;
+    double a,b,c,d;
+    //二维FFT的长度和宽度
+    unsigned long nn[3];
+    //图像归一化因子
+    double MaxNum;
+    // 计算图像每行的字节数
+    lLineBytes = WIDTHBYTES(lWidth * 8);
+    double dPower = log((double)lLineBytes)/log(2.0);
+    if(dPower != (int) dPower)
+    {
+        return false;
+    }
+    dPower = log((double)lHeight)/log(2.0);
+    if(dPower != (int) dPower)
+    {
+        return false;
+    }
+    fftSrc = new double [lHeight*lLineBytes*2+1];
+    fftKernel = new double [lHeight*lLineBytes*2+1];
+    nn[1] = lHeight;
+    nn[2] = lLineBytes;
+    for (j = 0;j < lHeight ;j++)
+    {
+        for(i = 0;i < lLineBytes ;i++)
+        {
+            // 指向源图像倒数第j行，第i个象素的指针   
+            lpSrc = (char *)lpDIBBits + lLineBytes * j + i;
+ 
+            pixel = (unsigned char)*lpSrc;
+ 
+            fftSrc[(2*lLineBytes)*j + 2*i + 1] = (double)pixel;
+            fftSrc[(2*lLineBytes)*j + 2*i + 2] = 0.0;
+ 
+            if(i < 5 && j == 0)
+            {
+                fftKernel[(2*lLineBytes)*j + 2*i + 1] = 1/5.0;
+            }
+            else
+            {
+                fftKernel[(2*lLineBytes)*j + 2*i + 1] = 0.0;
+            }
+            fftKernel[(2*lLineBytes)*j + 2*i + 2] = 0.0;
+        }
+    }
+ 
+    //对源图像进行FFT
+    fourn(fftSrc,nn,2,1);
+    //对卷积核图像进行FFT
+    fourn(fftKernel,nn,2,1);
+    for (j = 0;j < lHeight ;j++)
+    {
+        for(i = 0;i < lLineBytes ;i++)
+        {
+            a = fftSrc[(2*lLineBytes)*j + 2*i + 1];
+            b = fftSrc[(2*lLineBytes)*j + 2*i + 2];
+            c = fftKernel[(2*lLineBytes)*j + 2*i + 1];
+            d = fftKernel[(2*lLineBytes)*j + 2*i + 2];
+            if (c*c + d*d > 1e-3)
+            {
+                fftSrc[(2*lLineBytes)*j + 2*i + 1] = ( a*c + b*d ) / ( c*c + d*d );
+                fftSrc[(2*lLineBytes)*j + 2*i + 2] = ( b*c - a*d ) / ( c*c + d*d );
+            }
+        }
+    }
+    //对结果图像进行反FFT
+    fourn(fftSrc,nn,2,-1);
+ 
+    //确定归一化因子
+    MaxNum = 0.0;
+    for (j = 0;j < lHeight ;j++)
+    {
+        for(i = 0;i < lLineBytes ;i++)
+        {
+            fftSrc[(2*lLineBytes)*j + 2*i + 1] = 
+                sqrt(fftSrc[(2*lLineBytes)*j + 2*i + 1] * fftSrc[(2*lLineBytes)*j + 2*i + 1]/
+                +fftSrc[(2*lLineBytes)*j + 2*i + 2] * fftSrc[(2*lLineBytes)*j + 2*i + 2]);
+            if( MaxNum < fftSrc[(2*lLineBytes)*j + 2*i + 1])
+                MaxNum = fftSrc[(2*lLineBytes)*j + 2*i + 1];
+        }
+    }
+ 
+    //转换为图像
+    for (j = 0;j < lHeight ;j++)
+    {
+        for(i = 0;i < lLineBytes ;i++)
+        {
+            // 指向源图像倒数第j行，第i个象素的指针   
+            lpSrc = (char *)lpDIBBits + lLineBytes * j + i;
+ 
+            *lpSrc = (unsigned char) (fftSrc[(2*lLineBytes)*j + 2*i + 1]*255.0/MaxNum);
+        }
+    }
+    delete fftSrc;
+    delete fftKernel;
+    // 返回
+    return true;
+}
+ 
+*/
+ 
+//BOOL fourn(double * data/*psrc*/, unsigned long nn[]/*w*/, int ndim/*2*/, int isign)
+/*{
+    int idim;
+    unsigned long i1,i2,i3,i2rev,i3rev,ip1,ip2,ip3,ifp1,ifp2;
+    unsigned long ibit,k1,k2,n,nprev,nrem,ntot;
+    double tempi,tempr;
+    double theta,wi,wpi,wpr,wr,wtemp;
+ 
+    for (ntot=1,idim=1;idim<=ndim;idim++)
+        ntot *= nn[idim];
+    nprev=1;
+    for (idim=ndim;idim>=1;idim--) {
+        n=nn[idim];
+        nrem=ntot/(n*nprev);
+        ip1=nprev << 1;
+        ip2=ip1*n;
+        ip3=ip2*nrem;
+        i2rev=1;
+        for (i2=1;i2<=ip2;i2+=ip1) {
+            if (i2 < i2rev) {
+                for (i1=i2;i1<=i2+ip1-2;i1+=2) {
+                    for (i3=i1;i3<=ip3;i3+=ip2) {
+                        i3rev=i2rev+i3-i2;
+                        SWAP(data[i3],data[i3rev]);
+                        SWAP(data[i3+1],data[i3rev+1]);
+                    }
+                }
+            }
+            ibit=ip2 >> 1;
+            while (ibit >= ip1 && i2rev > ibit) {
+                i2rev -= ibit;
+                ibit >>= 1;
+            }
+            i2rev += ibit;
+        }
+        ifp1=ip1;
+        while (ifp1 < ip2) {
+            ifp2=ifp1 << 1;
+            theta=isign*6.28318530717959/(ifp2/ip1);
+            wtemp=sin(0.5*theta);
+            wpr = -2.0*wtemp*wtemp;
+            wpi=sin(theta);
+            wr=1.0;
+            wi=0.0;
+            for (i3=1;i3<=ifp1;i3+=ip1) {
+                for (i1=i3;i1<=i3+ip1-2;i1+=2) {
+                    for (i2=i1;i2<=ip3;i2+=ifp2) {
+                        k1=i2;
+                        k2=k1+ifp1;
+                        tempr=wr*data[k2]-wi*data[k2+1];
+                        tempi=wr*data[k2+1]+wi*data[k2];
+                        data[k2]=data[k1]-tempr;
+                        data[k2+1]=data[k1+1]-tempi;
+                        data[k1] += tempr;
+                        data[k1+1] += tempi;
+                    }
+                }
+                wr=(wtemp=wr)*wpr-wi*wpi+wr;
+                wi=wi*wpr+wtemp*wpi+wi;
+            }
+            ifp1=ifp2;
+        }
+        nprev *= n;
+    }
+    return true;
+}
+ 
+*/
+问答7月活动 大波C币等着你对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理
+suseyaoyao
+
+suseyaoyao
+suseyaoyao
+本版等级：T3
+#2 得分：0 回复于： 2013-01-06 10:40:06
+本帖最后由 VisualEleven 于 2013-01-06 12:03:22 编辑
+那个核函数部分：
+C/C++ code
+?
+1
+2
+3
+4
+5
+6
+7
+8
+9
+if(i < 15 && j == 0)
+{
+fftKernel[(2*lLineBytes)*j + 2*i + 1] = 0.0667;
+}
+else
+{
+fftKernel[(2*lLineBytes)*j + 2*i + 1] = 0.0;
+}
+fftKernel[(2*lLineBytes)*j + 2*i + 2] = 0.0;
+
+我是在matlab里面先用fspecial生成的一个模糊图像，然后再将该图像用作opencv里的输入图像
+具体是 PSF=fspecial('motion',15,0);  所以核函数是一个1行15列的全部为0.0667，帮忙的朋友可以根据自己的情况修改核函数
+下载CSDN移动客户端 送50C币对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理
+suseyaoyao
+
+suseyaoyao
+suseyaoyao
+本版等级：T3
+#3 得分：0 回复于： 2013-01-06 10:42:25
+逆滤波和维纳滤波都用到了fourn这个快速傅里叶变换函数，不知道cvDFT这个函数怎么不好用，但是我用cvDFT这个函数又实现了频域高通滤波，哎，惆怅，在线等啊
+对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理
+arpnet99
+
+arpnet99  版主
+熊猫党团委副书记
+本版等级：T7
+#4 得分：5 回复于： 2013-01-06 11:42:48
+
+对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理
+tiger9991
+
+tiger9991  版主
+傻X
+本版等级：T10
+ Blank  Blank  Blank
+更多勋章
+#5 得分：10 回复于： 2013-01-06 11:51:13
+专业技术开发专区有个几个OPENCV很牛的。可以去那边开个传送门
+对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理
+VisualEleven
+
+VisualEleven  版主
+Eleven
+本版等级：T12
+ Blank  Blank  Blank
+更多勋章
+#6 得分：2 回复于： 2013-01-06 12:01:30
+
+对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理
+sha_jinhao
+
+sha_jinhao
+jimette
+本版等级：T7
+ Blank
+#7 得分：2 回复于： 2013-01-06 12:37:26
+
+对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理
+tczhouke
+
+tczhouke
+tczhouke
+本版等级：T1
+#8 得分：79 回复于： 2013-01-06 13:10:35
+传递函数计算有误啊。
+对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理
+lm841984
+
+lm841984
+白
+本版等级：T2
+#9 得分：2 回复于： 2013-01-06 13:11:30
+
+对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理
+kingfc
+
+kingfc
+kingfc
+本版等级：T1
+#10 得分：0 回复于： 2013-02-12 20:50:46
+那个逆滤波代码，用VS2010运行怎么有内存错误啊？求指教！
+对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理
+kingfc
+
+kingfc
+kingfc
+本版等级：T1
+#11 得分：0 回复于： 2013-02-13 15:13:24
+哦，原来是内存分配的问题，已经解决。不过还是显示不了结果啊，问题出在这里：
+试了各种尺寸的图像还不行，求指教！
+对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理
+kingfc
+
+kingfc
+kingfc
+本版等级：T1
+#12 得分：0 回复于： 2013-02-18 16:01:11
+非常感谢楼主的分享！在那个核函数里面，最后一行是不是用来设置模糊角度的啊？
+对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理
+yaozhongjiang
+
+yaozhongjiang
+yaozhongjiang
+本版等级：T1
+#13 得分：0 回复于： 2013-04-23 20:24:25
+内存冲突怎么解决的啊？大神，帮忙指点一下吧。引用
+滤波代码，用VS2010运行怎么有内存错误啊？求指教！
+对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理
+louisttzz
+
+louisttzz
+louisttzz
+本版等级：T1
+#14 得分：0 回复于： 2013-04-24 15:25:19
+正在学习运动模糊复原 下了你的那个维纳滤波的也调试好了 就是想问问 如果我想估计模糊图像参数 就是模糊角度和模糊距离 不知道应该怎么做？能解答下吗
+对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理
+a327563965
+
+a327563965
+pan-er
+本版等级：T1
+#15 得分：0 回复于： 2013-05-12 08:55:00
+正在尝试给图片加入运动模糊，并且用维纳复原！
+很有用的资源
+对我有用[1] 丢个板砖[0] 引用 | 举报 | 管理
+timidsmile
+
+timidsmile
+timidsmile
+本版等级：T2
+#16 得分：0 回复于： 2013-06-27 16:22:21
+
+
+C/C++ code
+?
+1
+2
+3
+# pragma comment(linker, "/NODEFAULTLIB:atlthunk.lib")
+# pragma comment(linker, "/NODEFAULTLIB:LIBCMT")
+# pragma comment(linker, "/NODEFAULTLIB:MSVCRTD")
+
+
+介个是什么，，不太懂捏。。。
+用了链接有错误，不用，效果不对呀。。。。
+
+对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理
+zhaoyading
+
+zhaoyading
+求索路途
+本版等级：T1
+#17 得分：0 回复于： 2013-10-17 13:14:00
+修改一下参数，修改之后程序如下：
+#include"stdafx.h"
+#include<cv.h>
+#include<highgui.h>
+#include<math.h>
+#include<time.h>
+#include<iostream>       //存储int型变量用32位
+//#include<vector>
+#include <stdlib.h>
+
+#define SWAP(a,b) tempr=(a);(a)=(b);(b)=tempr
+BOOL fourn(double * data/*psrc*/, unsigned long nn[]/*w*/, int ndim/*2*/, int isign);
+void main(int argc, char argv[])
+{
+IplImage *Gray = cvLoadImage("D:\\34.bmp",-1);
+cvNamedWindow("src");
+cvShowImage("src",Gray);
+int lHeight = Gray->height;
+int lWidth = Gray->width;
+int lLineBytes = Gray->widthStep;
+int lw = 1;
+int lh = 1;
+int wp = 0;
+int hp = 0;
+//保证离散傅里叶变换的宽度和高度为2的整数幂
+while(lw*2 <= lLineBytes)
+{
+lw = lw*2;0;  
+wp++;
+}
+while(lh*2 <= lHeight)
+{
+lh = lh*2;
+hp++;
+}
+//输入退化图像的长和宽必须为2的整数倍；
+if(lw != (int)lLineBytes)
+{
+return;
+}
+if(lh != (int)lHeight)
+{
+return;
+}
+double *fftSrc, *fftKernel,*fftNoise;
+fftSrc = new double [lHeight*lLineBytes*2+1];
+fftKernel = new double [lHeight*lLineBytes*2+1];
+        fftNoise = new double [lHeight*lLineBytes*2+1];
+unsigned long nn[3] = {0};
+nn[1] = lHeight;
+nn[2] = lLineBytes;
+LPSTR lpSrc;
+unsigned char pixel;
+for (int j = 0;j < lHeight ;j++)
+{
+for(int i = 0;i < lLineBytes ;i++)
+{
+// 指向源图像倒数第j行，第i个象素的指针   
+lpSrc = (char *)Gray->imageData + lLineBytes * j + i;
+
+pixel = (unsigned char)*lpSrc;
+
+fftSrc[(2*lLineBytes)*j + 2*i + 1] = (double)pixel;
+fftSrc[(2*lLineBytes)*j + 2*i + 2] = 0.0;
+
+if(i < 4 && j == 0)
+{
+fftKernel[(2*lLineBytes)*j + 2*i + 1] = 1/5.0;
+}
+else
+{
+fftKernel[(2*lLineBytes)*j + 2*i + 1] = 0.0;
+}
+fftKernel[(2*lLineBytes)*j + 2*i + 2] = 0.0;
+if( i + j == ((int)((i+j)/8))*8)
+{
+fftNoise[(2*lLineBytes)*j + 2*i +1] = -16;
+}
+else
+{
+fftNoise[(2*lLineBytes)*j + 2*i +1] = -16;
+}
+fftNoise[(2*lLineBytes)*j + 2*i +2] = -16.0;
+}
+}
+srand((unsigned)time(NULL));
+//对源图像进行FFT
+fourn(fftSrc,nn,2,1);
+//对卷积核图像进行FFT
+fourn(fftKernel,nn,2,1);
+//对噪声图像进行FFT
+fourn(fftNoise,nn,2,1);
+double a,b,c,d,e,f,multi;
+for (int i = 1;i <lHeight*lLineBytes*2;i+=2)
+{
+a = fftSrc[i];
+b = fftSrc[i+1];
+c = fftKernel[i];
+d = fftKernel[i+1];
+e = fftNoise[i];
+f = fftNoise[i+1];
+multi = (a*a + b*b)/(a*a + b*b - e*e - f*f);
+if (c*c + d*d > 1e-3)
+{
+fftSrc[i] = ( a*c + b*d ) / ( c*c + d*d )/multi;
+fftSrc[i+1] = ( b*c - a*d ) / ( c*c + d*d )/multi;
+}
+}
+
+//对结果图像进行反FFT
+fourn(fftSrc,nn,2,-1);
+//确定归一化因子
+//图像归一化因子
+double MaxNum;
+MaxNum = 300.0;
+for (int j = 0;j < lHeight ;j++)
+{
+for(int i = 0;i < lLineBytes ;i++)
+{
+fftSrc[(2*lLineBytes)*j + 2*i + 1] = 
+sqrt(fftSrc[(2*lLineBytes)*j + 2*i + 1] * fftSrc[(2*lLineBytes)*j + 2*i + 1]\
++fftSrc[(2*lLineBytes)*j + 2*i + 2] * fftSrc[(2*lLineBytes)*j + 2*i + 2]);
+if( MaxNum < fftSrc[(2*lLineBytes)*j + 2*i + 1])
+MaxNum = fftSrc[(2*lLineBytes)*j + 2*i + 1];
+}
+}
+//转换为图像
+for (int j = 0;j < lHeight ;j++)
+{
+for(int i = 0;i < lLineBytes ;i++)
+{
+// 指向源图像倒数第j行，第i个象素的指针   
+lpSrc = (char *)Gray->imageData + lLineBytes * j + i;
+
+*lpSrc = (unsigned char) (fftSrc[(2*lLineBytes)*j + 2*i + 1]*255.0/MaxNum);
+}
+}
+cvNamedWindow("dst");
+cvShowImage("dst",Gray);
+cvWaitKey(0);
+
+
+}
+
+
+
+BOOL fourn(double * data/*psrc*/, unsigned long nn[]/*w*/, int ndim/*2*/, int isign)
+{
+int idim;
+unsigned long i1,i2,i3,i2rev,i3rev,ip1,ip2,ip3,ifp1,ifp2;
+unsigned long ibit,k1,k2,n,nprev,nrem,ntot;
+double tempi,tempr;
+double theta,wi,wpi,wpr,wr,wtemp;
+
+for (ntot=1,idim=1;idim<=ndim;idim++)
+ntot *= nn[idim];
+nprev=1;
+for (idim=ndim;idim>=1;idim--) {
+n=nn[idim];
+nrem=ntot/(n*nprev);
+ip1=nprev << 1;
+ip2=ip1*n;
+ip3=ip2*nrem;
+i2rev=1;
+for (i2=1;i2<=ip2;i2+=ip1) {
+if (i2  < i2rev) {
+for (i1=i2;i1<=i2+ip1-2;i1+=2) {
+for (i3=i1;i3<=ip3;i3+=ip2) {
+i3rev=i2rev+i3-i2;
+SWAP(data[i3],data[i3rev]);
+SWAP(data[i3+1],data[i3rev+1]);
+}
+}
+}
+ibit=ip2 >> 1;
+while (ibit >= ip1 && i2rev > ibit) {
+i2rev -= ibit;
+ibit >>= 1;
+}
+i2rev += ibit;
+}
+ifp1=ip1;
+while (ifp1 < ip2) {
+ifp2=ifp1 << 1;
+theta=isign*6.28318530717959/(ifp2/ip1);
+wtemp=sin(0.5*theta);
+wpr = -2.0*wtemp*wtemp;
+wpi=sin(theta);
+wr=1.0;
+wi=0.0;
+for (i3=1;i3<=ifp1;i3+=ip1) {
+for (i1=i3;i1<=i3+ip1-2;i1+=2) {
+for (i2=i1;i2<=ip3;i2+=ifp2) {
+k1=i2;
+k2=k1+ifp1;
+tempr=wr*data[k2]-wi*data[k2+1];
+tempi=wr*data[k2+1]+wi*data[k2];
+data[k2]=data[k1]-tempr;
+data[k2+1]=data[k1+1]-tempi;
+data[k1] += tempr;
+data[k1+1] += tempi;
+}
+}
+wr=(wtemp=wr)*wpr-wi*wpi+wr;
+wi=wi*wpr+wtemp*wpi+wi;
+}
+ifp1=ifp2;
+}
+nprev *= n;
+}
+return true;
+}
+C/C++ code
+?
+1
+ 
+对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理
+LICHUNLI1022
+
+LICHUNLI1022
+LICHUNLI1022
+本版等级：T4
+#18 得分：0 回复于： 2013-12-11 13:57:23
+想问一下楼主是如何解决维纳滤波结果都是黑白相间的线 的问题的？我试验出来也是这样的结果。
+还有一个问题就是下面这几行代码是做什么用的？加上之后一堆链接错误呢。
+C/C++ code
+?
+1
+2
+3
+# pragma comment(linker, "/NODEFAULTLIB:atlthunk.lib")
+# pragma comment(linker, "/NODEFAULTLIB:LIBCMT")
+# pragma comment(linker, "/NODEFAULTLIB:MSVCRTD")
+对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理
+LICHUNLI1022
+
+LICHUNLI1022
+LICHUNLI1022
+本版等级：T4
+#19 得分：0 回复于： 2013-12-11 13:59:14
+引用 11 楼 kingfc 的回复:
+哦，原来是内存分配的问题，已经解决。不过还是显示不了结果啊，问题出在这里：
+试了各种尺寸的图像还不行，求指教！
+这里注释是2的整数倍，但是那个if语句要求是必须是2的整数幂次才能满足，很奇怪
+对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理
+LICHUNLI1022
+
+LICHUNLI1022
+LICHUNLI1022
+本版等级：T4
+#20 得分：0 回复于： 2013-12-11 16:53:32
+下载了lz的“opencv2.1+VS2008实现维纳滤波复原”资源，通过测试时正确的，不知道lz针对1楼自己原来贴的代码做了哪些改进？运行结果是，图像变亮了很多，不明白为什么得出的结果图像会变得很亮。楼主把图片的宽度和长度缩放到256*256，是一个很好的做法，解决了实时采集图像不能满足2的整数次幂的问题。唯一不足的是在程序的这个注释的地方仍然是输入退化图像的长和宽必须为2的整数倍；正确的应该是：2的整数次幂。
+C/C++ code
+?
+1
+2
+3
+4
+5
+6
+7
+8
+9
+//输入退化图像的长和宽必须为2的整数倍；
+    if(lw != (int)lLineBytes)
+    {
+        return;
+    }
+    if(lh != (int)lHeight)
+    {
+        return;
+    }
+对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理
+u014640201
+
+u014640201
+JustSooSooo
+本版等级：T1
+#21 得分：0 回复于： 2014-08-13 15:27:04
+
+
+DFT
+
+DFT
+执行一维或者二维浮点数组的离散傅立叶正变换或者离散傅立叶逆变换
+
+#define CV_DXT_FORWARD 0
+#define CV_DXT_INVERSE 1
+#define CV_DXT_SCALE:2
+#define CV_DXT_ROWS: 4
+#define CV_DXT_INV_SCALE (CV_DXT_SCALE|CV_DXT_INVERSE)
+#define CV_DXT_INVERSE_SCALE CV_DXT_INV_SCALE
+void cvDFT( const CvArr* src, CvArr* dst, int flags );
+src
+输入数组, 实数或者复数.
+dst
+输出数组，和输入数组有相同的类型和大小。
+flags
+变换标志, 下面的值的组合:
+CV_DXT_FORWARD - 正向 1D 或者 2D 变换. 结果不被缩放.
+CV_DXT_INVERSE - 逆向 1D 或者 2D 变换. 结果不被缩放.当然 CV_DXT_FORWARD 和 CV_DXT_INVERSE 是互斥的.
+CV_DXT_SCALE - 对结果进行缩放: 用数组元素除以它. 通常, 它和 CV_DXT_INVERSE 组合在一起,可以使用缩写 CV_DXT_INV_SCALE.
+CV_DXT_ROWS - 输入矩阵的每个独立的行进行整型或者逆向变换。这个标志允许用户同时变换多个向量，减少开销(它往往比处理它自己要快好几倍), 进行 3D 和高维的变换等等。
+函数 cvDFT 执行一维或者二维浮点数组的离散傅立叶正变换或者离散傅立叶逆变换:
+
+N 元一维向量的正向傅立叶变换:
+y = F(N)?x, 这里 F(N)jk=exp(-i?2Pi?j?k/N), i=sqrt(-1)
+N 元一维向量的逆向傅立叶变换:
+x'= (F(N))-1?y = conj(F(N))?y
+x = (1/N)?x
+M×N 元二维向量的正向傅立叶变换:
+Y = F(M)?X?F(N)
+M×N 元二维向量的逆向傅立叶变换:
+X'= conj(F(M))?Y?conj(F(N))
+X = (1/(M?N))?X'
+假设时实数数据 (单通道) ,从 IPL 借鉴过来的压缩格式被用来表现一个正向傅立叶变换的结果或者逆向傅立叶变换的输入：
+
+Re Y0,0: Re Y0,1:Im Y0,1:Re Y0,2: Im Y0,2 ... Re Y0,N/2-1 Im Y0,N/2-1 Re Y0,N/2
+Re Y1,0: Re Y1,1:Im Y1,1:Re Y1,2: Im Y1,2 ... Re Y1,N/2-1 Im Y1,N/2-1 Re Y1,N/2
+Im Y1,0: Re Y2,1:Im Y2,1:Re Y2,2: Im Y2,2 ... Re Y2,N/2-1 Im Y2,N/2-1 Im Y2,N/2
+............................................................................................
+Re YM/2-1,0 Re YM-3,1 Im YM-3,1 Re YM-3,2 Im YM-3,2 ... Re YM-3,N/2-1 Im YM-3,N/2-1 Re YM-3,N/2
+Im YM/2-1,0 Re YM-2,1 Im YM-2,1 Re YM-2,2 Im YM-2,2 ... Re YM-2,N/2-1 Im YM-2,N/2-1 Im YM-2,N/2
+Re YM/2,0:Re YM-1,1 Im YM-1,1 Re YM-1,2 Im YM-1,2 ... Re YM-1,N/2-1 Im YM-1,N/2-1 Im YM-1,N/2
+注意:如果 N 时偶数最后一列存在（is present）, 如果 M 时偶数最后一行（is present）.
+
+如果是一维实数的变换结果就像上面矩阵的第一行的形式。利用DFT求解二维卷积
+
+CvMat* A = cvCreateMat( M1, N1, CV_32F );
+CvMat* B = cvCreateMat( M2, N2, A->type );
+
+    #include <highgui.h>  
+    #include <cv.h>  
+      
+    int main(int argc, char** argv)  
+    {  
+        int M1 = 2, M2 = 2, N1 = 2, N2 = 2;  
+        CvMat* A = cvCreateMat( M1, N1, CV_32F );  //创建2行2列的32位浮点矩阵  
+        CvMat* B = cvCreateMat( M2, N2, A->type );  
+      
+        //创建矩阵存放卷积结果have only abs(M2-M1)+1×abs(N2-N1)+1 part of the full convolution result  
+        CvMat* convolution = cvCreateMat( A -> rows + B -> rows - 1,  
+            A -> cols + B -> cols - 1, A -> type );  
+        int dft_M = cvGetOptimalDFTSize( A -> rows + B -> rows - 1 );  //对于给定的矢量尺寸返回最优DFT尺寸   
+        int dft_N = cvGetOptimalDFTSize( A -> cols + B -> cols - 1 );  
+        CvMat* dft_A = cvCreateMat( dft_M, dft_N, A -> type );  
+        CvMat* dft_B = cvCreateMat( dft_M, dft_N, B -> type );  
+        CvMat tmp;  
+      
+        // copy A to dft_A and pad dft_A with zeros  
+        cvGetSubRect( dft_A, &tmp, cvRect( 0, 0, A -> cols, A -> rows ) );  //返回输入的图像或矩阵的矩形数组子集的矩阵头   
+        cvCopy( A, &tmp );  
+        cvGetSubRect( dft_A, &tmp, cvRect( A -> cols, 0, dft_A -> cols - A -> cols, A -> rows ) );  
+        cvZero( &tmp );  
+      
+        // no need to pad bottom part of dft_A with zeros because of  
+        // use nonzero_rows parameter in cvDFT() call below  
+        cvDFT( dft_A, dft_A, CV_DXT_FORWARD, A -> rows );  //执行一维或者二维浮点数组的离散傅立叶正变换或者离散傅立叶逆变换  
+          
+        // repeat the same with the second array B  
+        //  
+        cvGetSubRect( dft_B, &tmp, cvRect( 0, 0, B -> cols, B -> rows ) );  //返回输入的图像或矩阵的矩形数组子集的矩阵头   
+        cvCopy( B, &tmp );  
+        cvGetSubRect( dft_B, &tmp, cvRect( B -> cols, 0, dft_B -> cols - B -> cols, B -> rows ) );  
+        cvZero( &tmp );  
+        cvDFT( dft_B, dft_B, CV_DXT_FORWARD, B -> rows );  
+      
+        cvMulSpectrums( dft_A, dft_B, dft_A, 0 );  //两个傅立叶频谱的每个元素的乘法  
+      
+        cvDFT( dft_A, dft_A, CV_DXT_INV_SCALE, convolution -> rows );  
+        cvGetSubRect( dft_A, &tmp, cvRect( 0, 0, convolution -> cols, convolution -> rows ) );  
+        cvCopy( &tmp, convolution );  
+      
+        cvReleaseMat( &dft_A );  
+        cvReleaseMat( &dft_B );  
+      
+        return 0;  
+    }  
+对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理
+huixiali
+
+huixiali
+huixiali
+本版等级：T1
+#22 得分：0 回复于： 2014-10-26 15:03:41
+楼主，我用了你的这个代码是弄通过编译，但是就是运行时一闪而过，求解释，我的联系方式是113782055，我非常需要这个，因为学习好久，愣是没有写出来，希望楼主能给参考依据
+对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理
+huixiali
+
+huixiali
+huixiali
+本版等级：T1
+#23 得分：0 回复于： 2014-11-03 20:18:34
+上面的联系方式不对应是1137820558
+对我有用[0] 丢个板砖[0] 引用 | 举报 | 管理
+返回列表
+管理菜单 结帖 发帖 回复 关注关注
+
+
+
+
+
+CSDN 移动客户端正式发布
+HTML 5项目实战：我要地图项目
+Unity3D实战进阶教程
+微信公众平台开发入门
+
+CSDN
+CSDN社区问答精华QA
+回复内容 匿名用户不能发表回复！登录|注册   移动客户端回帖所得专家分翻倍，下载体验！
+编辑预览
+粗体
+斜体
+下划线
+---------------
+字体大小
+字体颜色
+---------------
+图片
+链接
+---------------
+左对齐
+居中对齐
+右对齐
+---------------
+引用
+代码
+---------------
+QQ
+monkey
+onion
+---------------
+押宝
+---------------
+清除格式
+
+每天回帖即可获得10分可用分！小技巧：教您如何更快获得可用分 你还可以输入10000个字符 (Ctrl+Enter)
+请遵守CSDN用户行为准则，不得违反国家法律法规。
+转载文章请注明出自“CSDN（www.csdn.net）”。如是商业用途请联系原作者。
+公司简介|招贤纳士|广告服务|银行汇款帐号|联系方式|版权声明|法律顾问|问题报告|合作伙伴|论坛反馈
+网站客服杂志客服微博客服webmaster@csdn.net400-600-2320|北京创新乐知信息技术有限公司 版权所有|江苏乐知网络技术有限公司 提供商务支持
+京 ICP 证 070598 号|Copyright ? 1999-2014, CSDN.NET, All Rights Reserved GongshangLogo

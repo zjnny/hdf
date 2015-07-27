@@ -3,6 +3,7 @@
 #include "FuncObject.h"
 #include <string>
 class DataSet;
+class Coordinate;
 namespace HDFTools
 {
 	
@@ -19,6 +20,8 @@ namespace HDFTools
 	private:
 		std::string m_outfile;//输出文件全路径名
 		DataSet *m_pDataSet;
+		Coordinate*m_pLongitude;
+		Coordinate*m_pLatitude;
 	};
 }
 

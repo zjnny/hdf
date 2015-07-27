@@ -18,6 +18,9 @@ public:
 	void Project(DataSet* pData);
 	void GenRaw(const char*file);
 	void Output(const char* file);
+	Coordinate* GetLatitude(){return m_pLatitude;}
+	Coordinate* GetLongitude(){return m_pLongitude;}
+	DataSet *GetProjectedDS(){return &m_pProjected;}
 protected:
 	void Init(DataSet* pData);
 	void Destroy();

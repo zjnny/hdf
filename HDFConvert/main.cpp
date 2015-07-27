@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
 				cout<<"Can not find dataset:"<<vc[i]<<endl;
 				continue;
 			}
-			//格式转化输出
+			//格式转化输出//暂时每个数据集输出到一个raw中
 			ConvertDataset(dsFile,dsGroup,ana.GetOutputFile());
 		}
 	}
@@ -50,7 +50,9 @@ int main(int argc, char* argv[])
 	{
 		cout<<"Unknow error!"<<endl;
 	}
+#ifdef _DEBUG
 	system("pause");
+#endif
 	return 0;
 }
 void ConvertDataset(string &filepath,string &dspath,string &outname)

@@ -23,7 +23,6 @@ void FuncTif::SetParam(void * lparam,void *rparam)
 }
 int FuncTif::Execute()
 {
-	
 	return DataToTiff();
 }
 int FuncTif::DataToTiff()
@@ -48,7 +47,7 @@ int FuncTif::DataToTiff()
 	//HDF5Helper::SaveDataSet(m_outfile.c_str(),m_pDataSet->GetDataSetName(),m_pDataSet->GetData(),dimens,hval);
 	//HDF5Helper::SetAttrInfo(m_outfile.c_str(),m_pDataSet->GetDataSetName().c_str(),*(m_pDataSet->GetAttr()));
 	////
-	//debug 版本与hdf5有冲突，想同时使用只能用release
+	//debug 版本可能与hdf5有冲突，想同时使用只能用release
 	TIFF *tif=(TIFF*)0;  /* TIFF-level descriptor */
 	GTIF *gtif=(GTIF*)0; /* GeoKey-level descriptor */
 	

@@ -39,6 +39,7 @@
 		std::string GetDataSetGroupPath(const char * dset);
 		void GetProjectedDataSet(std::vector<std::string> &vt);
 		std::string GetOutputFile();
+		void GetOutputFileList(std::vector<std::string> &vt);
 		int GetMapSize();
 		std::string GetLatitudeDSetName();
 		std::string GetLongitudeDSetName();

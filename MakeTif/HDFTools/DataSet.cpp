@@ -66,6 +66,14 @@ void DataSet::GetAttrItem(HDFTools::AttrItem &item)
 		}
 	}
 }
+void DataSet::SetFileAttr(std::vector<HDFTools::AttrItem> &vc)
+{
+	m_fileattr=vc;
+}
+std::vector<HDFTools::AttrItem>* DataSet::GetFileAttr()
+{
+	return &m_fileattr;
+}
 void DataSet::InitFromFile(const char* file,std::string grouppath)
 {
 	Destroy();
@@ -80,6 +88,7 @@ void DataSet::InitFromFile(const char* file,std::string grouppath)
 		return ;
 	if(m_DimVal[2]==0)
 		m_DimVal[2]=1;
+	HDF5Helper::GetFileAttrInfo(file,m_fileattr);
 	HDF5Helper::GetDSAttrInfo(file,grouppath.c_str(),m_attr);
 	if(m_Type==UNSHORTTYPE)//m_Type  USHORT
 	{

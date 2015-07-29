@@ -4,7 +4,15 @@
     <LocalDebuggerCommandArguments>-o F:\temp\MERSI\out.tif -i  F:\temp\MERSI\out.hdf -d EV_250_Aggr.1KM_RefSB</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LocalDebuggerCommandArguments>-o F:\temp\MERSI\out.tif -i  F:\temp\MERSI\out.hdf -d EV_250_Aggr.1KM_RefSB</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LocalDebuggerCommandArguments>-o F:\temp\MERSI\out.tif -i F:\temp\MERSI\out.hdf -d EV_250_Aggr.1KM_RefSB -e enhance</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LocalDebuggerCommandArguments>-o F:\temp\MERSI\out.tif -i  F:\temp\MERSI\out.hdf -d EV_250_Aggr.1KM_Emissive -e enhance</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>

@@ -17,6 +17,7 @@ public:
 	ushort GetHeight();
 	void* GetCoord();
 	void Convert();
+	float GetResolution(){return m_pixelUnit;}
 protected:
 	//经度向坐标系转化，是否还保存原始坐标系？
 	

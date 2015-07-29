@@ -4,9 +4,116 @@
 #include <algorithm>
 #include "CLAHE.h"
 using namespace std;
+static void Bubble_sort(unsigned short *a,int n)
+{
+	int i, j, temp;
+	for (j = 0; j < n - 1; j++)
+		for (i = 0; i < n - 1 - j; i++)
+		{
+			if(a[i] > a[i + 1])
+			{
+				temp = a[i];
+				a[i] = a[i + 1];
+				a[i + 1] = temp;
+			}
+		}
+
+}
+bool Enhance::NearestCheck(ushort *pStart,ushort*pEnd,ushort filledVal)
+{
+	//首尾必定都有数据值
+	unsigned short *pos=pStart;
+	unsigned short startVal=*pos;
+	unsigned short endVal=*pos;
+	while(pos<pEnd)
+	{
+	
+		if(*pos!=filledVal)
+		{
+			++pos;
+		}
+		else
+		{
+			unsigned short *gapStart=pos;
+			unsigned short *gapEnd=pos;
+			while(*pos==filledVal)
+				++pos;
+			gapEnd=pos;
+
+			int len=gapEnd-gapStart;
+			if(len>100)//长度过长
+			{
+				return false;
+			}
+			
+
+		}
+	}
+	return true;
+}
 void Enhance::Nearest_interpolation(ushort *pSrc,int width,int height)
 {
-
+	ushort filledVal=0;
+	ushort *pBufStart=pSrc;
+	ushort *pBufEnd=pSrc+width*height;
+	for(int y=0;y<height;++y)
+	{
+		//寻找两端起点[start,end]每一行
+		unsigned short *pStart=pSrc+width*y;
+		unsigned short *pEnd=pStart+width-1;
+		while(pEnd>pStart)
+		{
+			if(*pStart==filledVal)
+				++pStart;
+			if(*pEnd==filledVal)
+				--pEnd;
+			if(*pStart!=filledVal&&*pEnd!=filledVal)
+				break;
+		}
+		if(pEnd<=pStart)//当前行全为空白处理下一行
+		{
+			continue;
+		}
+		//有过长空白则不填充、可能是内凹图形
+		if(!NearestCheck(pStart,pEnd,filledVal))
+			continue;
+		//[1,0,0,0,0,1]
+		if(y==0||y==height-1)//3*3的边缘
+		{
+			Fill_HorizontalLine(pStart,pEnd+1,filledVal);
+		}
+		else
+		{
+			NearestFill(pStart,pEnd,width,filledVal);
+		}
+	}
+}
+void Enhance::NearestFill(ushort *pStart,ushort*pEnd,int width,ushort filledVal)
+{
+	ushort buf[9];
+	while(pStart<pEnd)
+	{
+		++pStart;
+		if(*pStart==filledVal)
+		{
+			buf[0]=*(pStart-width-1);
+			buf[1]=*(pStart-width);
+			buf[2]=*(pStart-width+1);
+			buf[3]=*(pStart-1);
+			buf[4]=*(pStart);
+			buf[5]=*(pStart+1);
+			buf[6]=*(pStart+width-1);
+			buf[7]=*(pStart+width);
+			buf[8]=*(pStart+width+1);
+			Bubble_sort(buf,9);//由小到大
+			int pos=0;
+			while(buf[pos]==filledVal)
+			{
+				pos++;
+			}
+			*pStart=buf[pos+(9-pos)/2];
+		}
+	}
 }
 void Enhance::Bilinear_interpolation(ushort *pSrc,ushort* dest,int width,int height)
 {
@@ -233,21 +340,7 @@ bool Enhance::nearest_fill_unshort(unsigned short *pData, int width, int height,
 	cout << "Success!" << endl;
 	return true;
 }
-static void Bubble_sort(unsigned short *a,int n)
-{
-		int i, j, temp;
-		for (j = 0; j < n - 1; j++)
-			for (i = 0; i < n - 1 - j; i++)
-			{
-				if(a[i] > a[i + 1])
-				{
-					temp = a[i];
-					a[i] = a[i + 1];
-					a[i + 1] = temp;
-				}
-			}
-	
-}
+
 void Enhance::Median_Filter(unsigned short *src,int width,int height)
 {
 	ushort *temp=new ushort[width*height];
@@ -800,35 +893,38 @@ void Enhance::Convolution(ushort *src,ushort *des,int width,int height,ushort tp
  void Enhance::Laplace_Sharp(ushort *src,ushort* dest,int width,int height)
  {
 	 memcpy(dest,src,sizeof(ushort)*width*height);
-	 int arr[9]=  {
-		-1,-1,-1,
-		 -1,9,-1,
-		 -1,-1,-1
-	 };
-	 float factor=1.0f;
-	 Convolution(src,dest,width,height,3,3,1,1,arr,factor);
+	 /* int arr[9]=  {
+	 -1,-2,-1,
+	 -2,32,-2,
+	 -1,-2,-1
+	 };*/
+	 int arr[25] = { -1, -4, -7, -4, -1,   
+		 -4, -16, -26, -16, -4,   
+		 -7, -26, 505, -26, -7,  
+		 -4, -16, -26, -16, -4,   
+		 -1, -4, -7, -4, -1 };  
+	 float factor=0.003663f;
+	 Convolution(src,dest,width,height,5,5,2,2,arr,factor);
  }
  void Enhance::Gauss_Smooth(ushort *src,ushort* dest,int width,int height)
  {
 	 //memcpy(dest,src,sizeof(ushort)*width*height);
-	 //int arr[25]=  {
-		// 0,1,2,1,0,
-		// 1,2,4,2,1,
-		// 2,4,8,4,2,
-		// 1,2,4,2,1,
-		// 0,1,2,1,0
-	 //};
+	 int arr[25] = { 1, 4, 7, 4, 1,   
+		 4, 16, 26, 16, 4,   
+		 7, 26, 41, 26, 7,  
+		 4, 16, 26, 16, 4,   
+		 1, 4, 7, 4, 1 };  
 	 //float factor=0.02083f;
 	 //Convolution(src,dest,width,height,5,5,2,2,arr,factor);
 	 ///Gaussian Blur///////////////////////////////////////////////////////////////////////
 	 memcpy(dest,src,sizeof(ushort)*width*height);
-	 int arr[9]=  {
+	/* int arr[9]=  {
 		 1,2,1,
 		 2,4,2,
 		 1,2,1
-	 };
-	 float factor=0.0625f;
-	 Convolution(src,dest,width,height,3,3,1,1,arr,factor);
+	 };*/
+	float factor=0.003663f;
+	 Convolution(src,dest,width,height,5,5,2,2,arr,factor);
  }
   void Enhance::Gauss_Smooth(ushort *src,int width,int height)
   {
@@ -851,18 +947,19 @@ void Enhance::Convolution(ushort *src,ushort *des,int width,int height,ushort tp
   void Enhance::ImageEnhance(ushort *pSrc,int width,int height)
   {
 	  ///插值
-	  ushort *dest=new ushort[width*height];
+	 // ushort *dest=new ushort[width*height];
 	  //生成结果保存到dest中，但是pSrc已经被修改过了(为了利用空间，避免图像过大内存不足)
 	 // Enhance::Bilinear_interpolation2(pSrc,dest,width,height);
 	 // memcpy(pSrc,dest,width*height*sizeof(ushort));
+	 // Enhance::Nearest_interpolation(pSrc,width,height);
 	  Enhance::nearest_fill_unshort(pSrc,width,height,0,4,3);
 	  ///平滑去噪
-	 // Enhance::Median_Filter2(dest,width,height);//太耗时
+	 // Enhance::Median_Filter2(dest,width,height);//耗时
 	 //  memcpy(dest,pSrc,sizeof(ushort)*width*height);
-	 // Enhance::Gauss_Smooth(pSrc,dest,width,height);
-	 //  Enhance::Laplace_Sharp(dest,pSrc,width,height);
+	  //Enhance::Gauss_Smooth(dest,pSrc,width,height);
+	 // Enhance::Laplace_Sharp(pSrc,dest,width,height);
 	  //memcpy(pSrc,dest,sizeof(ushort)*width*height);
-	  delete []dest;
+	  //delete []dest;
   }
   void  Enhance::Histogram_Equalization(ushort *src,int width,int height)
   {

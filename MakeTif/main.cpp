@@ -25,8 +25,8 @@ void ExportFile(DataSet* pDs,string &outname);
 void MergeToRGB(Analysis*pAn,vector<string> &dslist,string &out);
 //一个数据集的多个通道
 void MergeToRGB(DataSet* ds,string &out);
-void WriteRGB2Tif(unsigned char*data,int width,int height,string &outfile);
-void Write16Gray2Tif(unsigned short* data,int width,int height,string &outfile);
+void WriteRGB2Tif(unsigned char*data,int width,int height,double left,double top,double resolutionx,double resolutiony,string &outfile);
+void Write16Gray2Tif(unsigned short* data,int width,int height,double left,double top,double resolutionx,double resolutiony,string &outfile);
 //HDF5转化成geotif，目前只处理同一个数据集里的通道,只考虑同一个文件中的数据
 //-o out.tif -i xxx.hdf -d ds1
 int main(int argc, char* argv[])
@@ -92,7 +92,28 @@ int main(int argc, char* argv[])
 				//ConvertDataset(dsFile,dsGroup,ana.GetOutputFile());
 				if(bEnhance)
 					Enhance::Histogram_Equalization_IgnoreZero((ushort*)ds.GetData(),ds.GetX(),ds.GetY());
-				Write16Gray2Tif((ushort*)ds.GetData(),ds.GetX(),ds.GetY(),ana.GetOutputFile());
+				vector<AttrItem> *pAttr=ds.GetFileAttr();
+				double left,top,resolutionx,resolutiony;
+				for(int i=0;i<pAttr->size();++i)
+				{
+					if((*pAttr)[i].strName=="Left-Top X")
+					{
+						left=*((double*) ((*pAttr)[i].pData));
+					}
+					else if((*pAttr)[i].strName=="Left-Top Y")
+					{
+						top=*((double*) ((*pAttr)[i].pData));
+					}
+					else if((*pAttr)[i].strName=="Resolution X")
+					{
+						resolutionx=*((double*) ((*pAttr)[i].pData));
+					}
+					else if((*pAttr)[i].strName=="Resolution Y")
+					{
+						resolutiony=*((double*) ((*pAttr)[i].pData));
+					}
+				}
+				Write16Gray2Tif((ushort*)ds.GetData(),ds.GetX(),ds.GetY(),left,top,resolutionx,resolutiony,ana.GetOutputFile());
 			}
 			else
 			{
@@ -104,7 +125,28 @@ int main(int argc, char* argv[])
 				//ConvertDataset(dsFile,dsGroup,ana.GetOutputFile());
 				if(bEnhance)
 					Enhance::Histogram_Equalization_IgnoreZero((ushort*)ds.GetData(),ds.GetX(),ds.GetY());
-				Write16Gray2Tif((ushort*)ds.GetData(),ds.GetX(),ds.GetY(),ana.GetOutputFile());
+				vector<AttrItem> *pAttr=ds.GetFileAttr();
+				double left,top,resolutionx,resolutiony;
+				for(int i=0;i<pAttr->size();++i)
+				{
+					if((*pAttr)[i].strName=="Left-Top X")
+					{
+						left=*((double*) ((*pAttr)[i].pData));
+					}
+					else if((*pAttr)[i].strName=="Left-Top Y")
+					{
+						top=*((double*) ((*pAttr)[i].pData));
+					}
+					else if((*pAttr)[i].strName=="Resolution X")
+					{
+						resolutionx=*((double*) ((*pAttr)[i].pData));
+					}
+					else if((*pAttr)[i].strName=="Resolution Y")
+					{
+						resolutiony=*((double*) ((*pAttr)[i].pData));
+					}
+				}
+				Write16Gray2Tif((ushort*)ds.GetData(),ds.GetX(),ds.GetY(),left,top,resolutionx,resolutiony,ana.GetOutputFile());
 
 			}
 
@@ -207,7 +249,7 @@ void MergeToRGB(Analysis*pAn,vector<string> &dslist,string &out)
 	fname=pAn->GetDataSetFile(dslist[2].c_str());
 	dsgroup=pAn->GetDataSetGroupPath(dslist[2].c_str());
 	bds.InitFromFile(fname.c_str(),dsgroup);
-	if(width!=gds.GetX()||height!=gds.GetY())
+	if(width!=bds.GetX()||height!=bds.GetY())
 	{
 		delete []pR;
 		delete []pG;
@@ -235,7 +277,28 @@ void MergeToRGB(Analysis*pAn,vector<string> &dslist,string &out)
 	delete []pG;
 	delete []pB;
 	//输出tif
-	WriteRGB2Tif(pRGB,width,height,out);
+	vector<AttrItem> *pAttr=bds.GetFileAttr();
+	double left,top,resolutionx,resolutiony;
+	for(int i=0;i<pAttr->size();++i)
+	{
+		if((*pAttr)[i].strName=="Left-Top X")
+		{
+			left=*((double*) ((*pAttr)[i].pData));
+		}
+		else if((*pAttr)[i].strName=="Left-Top Y")
+		{
+			top=*((double*) ((*pAttr)[i].pData));
+		}
+		else if((*pAttr)[i].strName=="Resolution X")
+		{
+			resolutionx=*((double*) ((*pAttr)[i].pData));
+		}
+		else if((*pAttr)[i].strName=="Resolution Y")
+		{
+			resolutiony=*((double*) ((*pAttr)[i].pData));
+		}
+	}
+	WriteRGB2Tif(pRGB,width,height,left,top,resolutionx,resolutiony,out);
 	delete []pRGB;
 }
 void MergeToRGB(DataSet* ds,string &out)
@@ -299,11 +362,31 @@ void MergeToRGB(DataSet* ds,string &out)
 	delete []pR;
 	delete[]pG;
 	delete[]pB;
-
-	WriteRGB2Tif(imageData,width,height,out);
+	vector<AttrItem> *pAttr=ds->GetFileAttr();
+	double left,top,resolutionx,resolutiony;
+	for(int i=0;i<pAttr->size();++i)
+	{
+		if((*pAttr)[i].strName=="Left-Top X")
+		{
+			left=*((double*) ((*pAttr)[i].pData));
+		}
+		else if((*pAttr)[i].strName=="Left-Top Y")
+		{
+			top=*((double*) ((*pAttr)[i].pData));
+		}
+		else if((*pAttr)[i].strName=="Resolution X")
+		{
+			resolutionx=*((double*) ((*pAttr)[i].pData));
+		}
+		else if((*pAttr)[i].strName=="Resolution Y")
+		{
+			resolutiony=*((double*) ((*pAttr)[i].pData));
+		}
+	}
+	WriteRGB2Tif(imageData,width,height,left,top,resolutionx,resolutiony,out);
 	delete []imageData;
 }
-void WriteRGB2Tif(unsigned char*data,int width,int height,string &outfile)
+void WriteRGB2Tif(unsigned char*data,int width,int height,double left,double top,double resolutionx,double resolutiony,string &outfile)
 {
 	TIFF *tif=(TIFF*)0;  /* TIFF-level descriptor */
 	GTIF *gtif=(GTIF*)0; /* GeoKey-level descriptor */
@@ -343,7 +426,24 @@ void WriteRGB2Tif(unsigned char*data,int width,int height,string &outfile)
 	}
 	TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, rowsperstrip );
 
+	double tiepoints[6]={0};
+	double pixscale[3]={0};
+	tiepoints[3]=left;
+	tiepoints[4]=top;
+	pixscale[0]=resolutiony;
+	pixscale[1]=resolutionx;
 
+	TIFFSetField(tif,TIFFTAG_GEOTIEPOINTS, 6,tiepoints);
+	TIFFSetField(tif,TIFFTAG_GEOPIXELSCALE, 3,pixscale);
+
+	GTIFKeySet(gtif, GTModelTypeGeoKey, TYPE_SHORT, 1, ModelGeographic);
+	GTIFKeySet(gtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsArea);
+	GTIFKeySet(gtif, GTCitationGeoKey, TYPE_ASCII, 0, "GeoImage");
+	GTIFKeySet(gtif, GeographicTypeGeoKey, TYPE_SHORT,  1, GCS_WGS_84/*KvUserDefined*/);
+	GTIFKeySet(gtif, GeogCitationGeoKey, TYPE_ASCII, 0, "WGS84");
+	GTIFKeySet(gtif, GeogAngularUnitsGeoKey, TYPE_SHORT,  1, Angular_Degree);
+	//GTIFKeySet(gtif, GeogLinearUnitsGeoKey, TYPE_SHORT,  1, Linear_Meter);
+	GTIFKeySet(gtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, KvUserDefined);
 
 	memset(buffOut,0,width*3*sizeof(unsigned char));
 	for (int i=0;i<height;i++){
@@ -362,14 +462,7 @@ void WriteRGB2Tif(unsigned char*data,int width,int height,string &outfile)
 	}
 	//
 	//TIFFFreeDirectory(tif);
-	GTIFKeySet(gtif, GTModelTypeGeoKey, TYPE_SHORT, 1, ModelGeographic);
-	GTIFKeySet(gtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsArea);
-	GTIFKeySet(gtif, GTCitationGeoKey, TYPE_ASCII, 0, "GeoImage");
-	GTIFKeySet(gtif, GeographicTypeGeoKey, TYPE_SHORT,  1, GCS_WGS_84/*KvUserDefined*/);
-	GTIFKeySet(gtif, GeogCitationGeoKey, TYPE_ASCII, 0, "WGS84");
-	GTIFKeySet(gtif, GeogAngularUnitsGeoKey, TYPE_SHORT,  1, Angular_Degree);
-	//GTIFKeySet(gtif, GeogLinearUnitsGeoKey, TYPE_SHORT,  1, Linear_Meter);
-	GTIFKeySet(gtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, KvUserDefined);
+
 	GTIFWriteKeys(gtif);
 	GTIFFree(gtif);
 	//_TIFFfree(imageData);
@@ -377,7 +470,7 @@ void WriteRGB2Tif(unsigned char*data,int width,int height,string &outfile)
 		_TIFFfree(buffOut);
 	XTIFFClose(tif);
 }
-void Write16Gray2Tif(unsigned short* data,int width,int height,string &outfile)
+void Write16Gray2Tif(unsigned short* data,int width,int height,double left,double top,double resolutionx,double resolutiony,string &outfile)
 {
 	TIFF *tif=(TIFF*)0;  /* TIFF-level descriptor */
 	GTIF *gtif=(GTIF*)0; /* GeoKey-level descriptor */
@@ -416,8 +509,23 @@ void Write16Gray2Tif(unsigned short* data,int width,int height,string &outfile)
 		rowsperstrip = height;
 	}
 	TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, rowsperstrip );
+	double tiepoints[6]={0};
+	double pixscale[3]={0};
+	tiepoints[3]=left;
+	tiepoints[4]=top;
+	pixscale[0]=resolutiony;
+	pixscale[1]=resolutionx;
 
-
+	TIFFSetField(tif,TIFFTAG_GEOTIEPOINTS, 6,tiepoints);
+	TIFFSetField(tif,TIFFTAG_GEOPIXELSCALE, 3,pixscale);
+	GTIFKeySet(gtif, GTModelTypeGeoKey, TYPE_SHORT, 1, ModelGeographic);
+	GTIFKeySet(gtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsArea);
+	GTIFKeySet(gtif, GTCitationGeoKey, TYPE_ASCII, 0, "GeoImage");
+	GTIFKeySet(gtif, GeographicTypeGeoKey, TYPE_SHORT,  1, GCS_WGS_84/*KvUserDefined*/);
+	GTIFKeySet(gtif, GeogCitationGeoKey, TYPE_ASCII, 0, "WGS84");
+	GTIFKeySet(gtif, GeogAngularUnitsGeoKey, TYPE_SHORT,  1, Angular_Degree);
+	//GTIFKeySet(gtif, GeogLinearUnitsGeoKey, TYPE_SHORT,  1, Linear_Meter);
+	GTIFKeySet(gtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, KvUserDefined);
 
 	memset(buffOut,0,width*sizeof(unsigned short));
 	for (int i=0;i<height;i++){
@@ -436,14 +544,7 @@ void Write16Gray2Tif(unsigned short* data,int width,int height,string &outfile)
 	}
 	//
 	//TIFFFreeDirectory(tif);
-	GTIFKeySet(gtif, GTModelTypeGeoKey, TYPE_SHORT, 1, ModelGeographic);
-	GTIFKeySet(gtif, GTRasterTypeGeoKey, TYPE_SHORT, 1, RasterPixelIsArea);
-	GTIFKeySet(gtif, GTCitationGeoKey, TYPE_ASCII, 0, "GeoImage");
-	GTIFKeySet(gtif, GeographicTypeGeoKey, TYPE_SHORT,  1, GCS_WGS_84/*KvUserDefined*/);
-	GTIFKeySet(gtif, GeogCitationGeoKey, TYPE_ASCII, 0, "WGS84");
-	GTIFKeySet(gtif, GeogAngularUnitsGeoKey, TYPE_SHORT,  1, Angular_Degree);
-	//GTIFKeySet(gtif, GeogLinearUnitsGeoKey, TYPE_SHORT,  1, Linear_Meter);
-	GTIFKeySet(gtif, GeogGeodeticDatumGeoKey, TYPE_SHORT, 1, KvUserDefined);
+	
 	GTIFWriteKeys(gtif);
 	GTIFFree(gtif);
 	//_TIFFfree(imageData);

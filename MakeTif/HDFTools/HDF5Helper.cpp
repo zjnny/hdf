@@ -338,6 +338,15 @@ bool HDF5Helper::GetAttrItem(hid_t fd,const char* dsname,AttrItem &aG)
 
 	return true;
 }
+int  HDF5Helper::GetFileAttrInfo(const char* file,std::vector<AttrItem> &vc)
+{
+	hid_t hFile =H5Fopen(file,H5F_ACC_RDONLY,H5P_DEFAULT);
+	if(hFile<0)
+		return -1;
+	GetFileAttrInfo(hFile,vc);
+	H5Fclose(hFile);
+	return 0;
+}
 int HDF5Helper::GetDSAttrInfo( const char* file,const char* dsname,std::vector<AttrItem> &vc)
 {
 	 hid_t hFile =H5Fopen(file,H5F_ACC_RDONLY,H5P_DEFAULT);
@@ -654,4 +663,18 @@ bool HDF5Helper::SetAttrInfo(const char* file,const char* strDsName,const std::v
 	 }
 
 	 return true;
+ }
+ int HDF5Helper::SetFileAttrInfo(const char* file,std::vector<AttrItem> &vc)
+ {
+	 hid_t hFile =H5Fopen(file,H5F_ACC_RDWR,H5P_DEFAULT);
+	 if(hFile<0)
+		 return false;
+	 SetFileAttrInfo(hFile,vc);
+	 H5Fclose(hFile);
+	 return true;
+ }
+ int HDF5Helper::SetFileAttrInfo(hid_t fd,std::vector<AttrItem> &vc)
+ {
+	 SetAttrInfo(fd,"/",vc);
+	 return 0;
  }

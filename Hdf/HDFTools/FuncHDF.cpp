@@ -28,7 +28,9 @@ static char * attrstr[]={
 	"Right-Bottom Y",
 	"Right-Top X",
 	"Right-Top Y",
-	"Time Of Data Composed"
+	"Time Of Data Composed",
+	"Resolution_X",
+	"Resolution_Y"
 };
 enum HDFAttrName {
 	Data_Creating_Date=0,
@@ -45,7 +47,9 @@ enum HDFAttrName {
 	Right_Bottom_Y,
 	Right_Top_X,
 	Right_Top_Y,
-	Time_Of_Data_Composed
+	Time_Of_Data_Composed,
+	Resolution_X,
+	Resolution_Y
 };
 FuncHDF::FuncHDF()
 {
@@ -286,6 +290,18 @@ void FuncHDF::Data2HDF()
 						memcpy(buf,ch,len);
 						pItem->pData=buf;
 						pItem->iByteLen=len;
+					}
+					break;
+				case Resolution_X:
+					{
+						float *dat=(float*)pItem->pData;
+						*dat=m_pLongitude->GetResolution();
+					}
+					break;
+				case Resolution_Y:
+					{
+						float *dat=(float*)pItem->pData;
+						*dat=m_pLatitude->GetResolution();
 					}
 					break;
 				default:

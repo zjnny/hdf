@@ -22,6 +22,8 @@ protected://插值相关
 	static void Fill_VerticalLine2(ushort *start,ushort*end,ushort width,ushort filledVal);
 	static void Add_VerticalHorLine2(unsigned short *src,int width,int height,unsigned short filledVal);
 	static void Add_HorizontalVerLine2(ushort *src,int width,int height,unsigned short filledVal);
+	static void NearestFill(ushort *pStart,ushort*pEnd,int width,ushort filledVal);
+	static bool NearestCheck(ushort *pStart,ushort*pEnd,ushort filledVal);
 public://插值处理
 	//需要外部提前申请temp内存,该函数会修改pSrc的内容，pSrc内容失效
 	static void Bilinear_interpolation(ushort *pSrc,ushort* dest,int width,int height); 

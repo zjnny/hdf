@@ -126,6 +126,20 @@ void Projector::Project(DataSet* pData)
 			++pLat;
 			++pSrc;
 		}
+		//对齐坐标系方向左上角转到左下角
+		ushort *pTempBuf=new ushort[m_width];
+		ushort *pTemp=tempBuf;
+		ushort *pUp=pTemp;
+		ushort *pDw=pTemp+m_width*(m_height-1);
+		for(int i=0;i<m_height/2;++i)
+		{
+			memcpy(pTempBuf,pUp,m_width*sizeof(ushort));
+			memcpy(pUp,pDw,m_width*sizeof(ushort));
+			memcpy(pDw,pTempBuf,m_width*sizeof(ushort));
+			pDw-=m_width;
+			pUp+=m_width;
+		}
+		delete []pTempBuf;
 		//处理每一帧
 		Enhance::ImageEnhance(tempBuf,m_width,m_height);
 		end=clock();

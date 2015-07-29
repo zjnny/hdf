@@ -102,6 +102,11 @@ namespace HDFTools
 		static int GetDSAttrInfo(hid_t fd,const char* dsname,std::vector<AttrItem> &vc);
 		static int GetDSAttrInfo( const char* file,const char* dsname,std::vector<AttrItem> &vc);
 		static int GetFileAttrInfo(hid_t fd,std::vector<AttrItem> &vc);
+		static int GetFileAttrInfo(const char* file,std::vector<AttrItem> &vc);
+		static int SetFileAttrInfo(hid_t fd,std::vector<AttrItem> &vc);
+		static int SetFileAttrInfo(const char* file,std::vector<AttrItem> &vc);
+
+
 		static void GetFileDayOrNightFLag(const char*file,std::string flagname,std::string &data);
 		static bool SetAttrInfo(hid_t hF,const char* strDsName,const std::vector<AttrItem> &vAttrD);
 		static bool SetAttrInfo(const char* file,const char* strDsName,const std::vector<AttrItem> &vAttrD);

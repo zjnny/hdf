@@ -50,6 +50,8 @@ namespace HDFTools
 		void SetAttr(std::vector<HDFTools::AttrItem> &vc);
 		std::vector<HDFTools::AttrItem>* GetAttr();
 		void GetAttrItem(HDFTools::AttrItem &item);
+		void SetFileAttr(std::vector<HDFTools::AttrItem> &vc);
+		std::vector<HDFTools::AttrItem>* GetFileAttr();
 	private:
 		int m_Dimensions;//是几维的数据结构
 		hsize_t m_DimVal[3];//每维的长度
@@ -59,6 +61,7 @@ namespace HDFTools
 		std::string m_GroupPath;
 		hid_t m_Type;
 		std::vector<HDFTools::AttrItem> m_attr;
+		std::vector<HDFTools::AttrItem> m_fileattr;
 	};
 }
 

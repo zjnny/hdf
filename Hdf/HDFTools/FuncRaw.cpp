@@ -37,6 +37,7 @@ int FuncRaw::Data2Raw2()
 {
 	if(m_pData==NULL)
 		return -1;
+	//write raw
 	FILE* fp = fopen(m_outfile.c_str(), "wb");
 	if(fp==NULL)
 	{
@@ -45,7 +46,24 @@ int FuncRaw::Data2Raw2()
 	}
 	fwrite(m_pData, m_width*m_bytes,m_height*m_zcoord, fp);
 	fclose(fp);
-	return 0;
+	//write hdr
+	//int pos=m_outfile.rfind('.');
+
+	m_outfile=m_outfile.substr(0,m_outfile.length()-4);
+	m_outfile+=".hdr";
+	fp = fopen(m_outfile.c_str(), "wb");
+	if(fp==NULL)
+	{
+		std::cout<<"Can not open file at "<<__LINE__<<std::endl;
+		return -1;
+	}
+	char buf[300];
+	sprintf_s(buf,"ENVI\ndescription = {\n  File Imported into ENVI.}\nsamples = %d\nlines   = %d\nbands   = %d\nheader offset = 0\nfile type = ENVI Standard\ndata type = 12\ninterleave = bsq\nsensor type = Unknown\nbyte order = 0\nwavelength units = Unknown",
+		m_width,m_height,m_zcoord
+		);
+	//\ndataset names = %s,m_pDataSet->GetDataSetName().c_str()
+	fwrite(buf, strlen(buf),1, fp);
+	fclose(fp);
 	return 0;
 }
 int FuncRaw::Data2Raw()

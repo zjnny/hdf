@@ -1,6 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LocalDebuggerCommandArguments>-o F:\temp\MERSI\out.hdf -i F:\temp\MERSI\FY3C_MERSI_GBAL_L1_20150529_0200_1000M_MS.HDF F:\temp\MERSI\FY3C_MERSI_GBAL_L1_20150529_0200_GEO1K_MS.HDF -d EV_250_Aggr.1KM_RefSB -j Longitude -w Latitude</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LocalDebuggerCommandArguments>-o F:\temp\MERSI\out.hdf -i F:\temp\MERSI\FY3C_MERSI_GBAL_L1_20150529_0200_1000M_MS.HDF F:\temp\MERSI\FY3C_MERSI_GBAL_L1_20150529_0200_GEO1K_MS.HDF -d EV_250_Aggr.1KM_Emissive -j Longitude -w Latitude</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>

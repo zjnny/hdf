@@ -158,6 +158,20 @@ void FuncAnalysis::GetProjectedDataSet(std::vector<std::string> &vt)
 			vt.push_back(dataset[i]);
 	}
 }
+void FuncAnalysis::GetOutputFileList(std::vector<std::string> &vt)
+{
+	vt.clear();
+	vector<string> strlist;
+	strlist=m_cmdmap["-o"];
+	if(strlist.size()==0)
+	{
+		 vt.push_back(GetDefaultOutputFile());
+	}
+	else
+	{
+		 vt=strlist;
+	}
+}
 std::string FuncAnalysis::GetOutputFile()
 {
 	vector<string> strlist;

@@ -7,5 +7,6 @@ FuncObject::~FuncObject(){
 
 }
 int  FuncObject::Execute(){
+
 	return 0;
 }

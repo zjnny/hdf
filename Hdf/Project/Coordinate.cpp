@@ -75,6 +75,7 @@ void Coordinate::Convert()
 	}
 	//转换后m_pSrcData来源没有意义，不再使用该指针
 	m_pSrcData=NULL;
+
 }
 unsigned short Coordinate::GetWidth()
 {
